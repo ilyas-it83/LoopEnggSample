@@ -118,10 +118,10 @@ function SearchResults() {
             <form className="filter-group" onSubmit={(event) => { event.preventDefault(); applyPriceRange(); }}>
               <strong>Estimated total (USD)</strong>
               <label htmlFor="minimum-price">Minimum
-                <input id="minimum-price" type="number" min="0" step="0.01" inputMode="decimal" value={minimumPrice} onChange={(event) => setMinimumPrice(event.target.value)} aria-describedby={priceRangeError ? "price-range-error" : undefined} />
+                <input id="minimum-price" type="number" min="0" step="0.01" inputMode="decimal" value={minimumPrice} onChange={(event) => setMinimumPrice(event.target.value)} aria-describedby={priceRangeError ? "price-range-error" : undefined} aria-invalid={priceRangeError ? true : undefined} aria-errormessage={priceRangeError ? "price-range-error" : undefined} />
               </label>
               <label htmlFor="maximum-price">Maximum
-                <input id="maximum-price" type="number" min="0" step="0.01" inputMode="decimal" value={maximumPrice} onChange={(event) => setMaximumPrice(event.target.value)} aria-describedby={priceRangeError ? "price-range-error" : undefined} />
+                <input id="maximum-price" type="number" min="0" step="0.01" inputMode="decimal" value={maximumPrice} onChange={(event) => setMaximumPrice(event.target.value)} aria-describedby={priceRangeError ? "price-range-error" : undefined} aria-invalid={priceRangeError ? true : undefined} aria-errormessage={priceRangeError ? "price-range-error" : undefined} />
               </label>
               {priceRangeError && <p id="price-range-error" className="filter-error" role="alert">{priceRangeError} Correct the range and apply it again.</p>}
               <button className="button button-secondary button-small" type="submit">Apply price range</button>
