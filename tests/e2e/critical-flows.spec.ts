@@ -55,3 +55,19 @@ test("no-results scenario provides recovery guidance", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "No vehicles match this search" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
 });
+
+test("customer filters results by passenger capacity", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByLabel("Minimum passenger capacity").selectOption("7");
+  await expect(page.getByText("2 matching vehicles")).toBeVisible();
+  await expect(page.getByRole("article")).toContainText("7 seats");
+});
+
+test("service errors prevent unavailable vehicle results", async ({ page }) => {
+  await page.goto("/demo-controls");
+  await page.getByRole("button", { name: /Service error/ }).click();
+  await page.goto("/search");
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Vehicle results are unavailable" })).toBeVisible();
+  await expect(page.getByRole("article")).toHaveCount(0);
+});
