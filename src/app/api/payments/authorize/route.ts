@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { MockApiEnvelope, MockPaymentAuthorization } from "@/lib/types";
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+): Promise<NextResponse<MockApiEnvelope<MockPaymentAuthorization>>> {
   const body = await request.json() as { cardNumber?: string };
   const digits = body.cardNumber?.replace(/\D/g, "") || "";
   if (digits === "4000000000000002") {
@@ -14,4 +17,3 @@ export async function POST(request: NextRequest) {
   }
   return NextResponse.json({ data: { outcome: "approved", brand: "Visa", last4: "4242" }, error: null });
 }
-

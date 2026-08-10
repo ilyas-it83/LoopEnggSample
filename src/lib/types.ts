@@ -21,6 +21,23 @@ export type DemoScenario =
   | "payment-decline"
   | "service-error";
 
+export interface MockApiError {
+  code: string;
+  message: string;
+  fields?: string[];
+}
+
+export interface MockApiEnvelope<T> {
+  data: T | null;
+  error: MockApiError | null;
+}
+
+export interface MockPaymentAuthorization {
+  outcome: "approved" | "declined";
+  brand?: string;
+  last4?: string;
+}
+
 export interface RentalLocation {
   id: string;
   name: string;

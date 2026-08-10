@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { defaultSearch, searchVehicles, validateSearch } from "@/lib/rental";
-import type { DemoScenario, SearchCriteria } from "@/lib/types";
+import type { DemoScenario, MockApiEnvelope, SearchCriteria, Vehicle } from "@/lib/types";
 
-export async function GET(request: NextRequest) {
+export const SLOW_RESPONSE_MS = 250;
+
+export async function GET(
+  request: NextRequest,
+): Promise<NextResponse<MockApiEnvelope<Vehicle[]>>> {
   const params = request.nextUrl.searchParams;
   const search: SearchCriteria = {
     pickupLocationId: params.get("pickupLocationId") || defaultSearch.pickupLocationId,
@@ -16,6 +20,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: null, error: { code: "INVALID_SEARCH", message: errors[0], fields: errors } }, { status: 400 });
   }
   const scenario = (params.get("scenario") || "normal") as DemoScenario;
+  if (scenario === "slow") {
+    await new Promise((resolve) => setTimeout(resolve, SLOW_RESPONSE_MS));
+  }
+  if (scenario === "service-error") {
+    return NextResponse.json({
+      data: null,
+      error: {
+        code: "MOCK_SERVICE_UNAVAILABLE",
+        message: "The mock vehicle service is unavailable. Change the demo scenario and retry.",
+      },
+    }, { status: 503 });
+  }
   return NextResponse.json({ data: searchVehicles(search, scenario), error: null });
 }
-
