@@ -72,17 +72,97 @@ jobs:
             const assignees = issue.assignees?.map((assignee) =>
               assignee.login.toLowerCase(),
             ) ?? [];
-            if (assignees.includes("copilot")) {
+            if (
+              assignees.includes("copilot") ||
+              assignees.includes("copilot-swe-agent")
+            ) {
               core.notice(`#${issueNumber} is already assigned to Copilot.`);
               return;
             }
 
-            await github.rest.issues.addAssignees({
-              owner,
-              repo,
-              issue_number: issueNumber,
-              assignees: ["Copilot"],
+            const featureHeaders = {
+              "GraphQL-Features": "issues_copilot_assignment_api_support",
+            };
+            const actorQuery = `
+              query FindCopilot($owner: String!, $repo: String!) {
+                repository(owner: $owner, name: $repo) {
+                  suggestedActors(
+                    capabilities: [CAN_BE_ASSIGNED]
+                    first: 100
+                  ) {
+                    nodes {
+                      __typename
+                      login
+                      ... on Bot { id }
+                      ... on User { id }
+                    }
+                  }
+                }
+              }
+            `;
+            const actorResponse = await github.request("POST /graphql", {
+              query: actorQuery,
+              variables: { owner, repo },
+              headers: featureHeaders,
             });
+
+            const actors =
+              actorResponse.data.data.repository.suggestedActors.nodes;
+            const copilot = actors.find((actor) =>
+              ["copilot", "copilot-swe-agent"].includes(
+                actor.login.toLowerCase(),
+              ),
+            );
+            if (!copilot?.id) {
+              core.setFailed(
+                "Copilot coding agent is not assignable in this repository.",
+              );
+              return;
+            }
+
+            const assignmentMutation = `
+              mutation AssignCopilot(
+                $issueId: ID!
+                $assigneeIds: [ID!]!
+              ) {
+                addAssigneesToAssignable(
+                  input: {
+                    assignableId: $issueId
+                    assigneeIds: $assigneeIds
+                  }
+                ) {
+                  assignable {
+                    ... on Issue {
+                      id
+                      assignees(first: 20) {
+                        nodes { id login }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+            const assignmentResponse = await github.request("POST /graphql", {
+              query: assignmentMutation,
+              variables: {
+                issueId: issue.node_id,
+                assigneeIds: [copilot.id],
+              },
+              headers: featureHeaders,
+            });
+
+            const assignedActors =
+              assignmentResponse.data.data.addAssigneesToAssignable
+                .assignable.assignees.nodes;
+            const assigned = assignedActors.some(
+              (actor) => actor.id === copilot.id,
+            );
+            if (!assigned) {
+              core.setFailed(
+                `GitHub did not assign Copilot to issue #${issueNumber}.`,
+              );
+              return;
+            }
 
             await github.rest.issues.addLabels({
               owner,
@@ -94,4 +174,3 @@ jobs:
             core.notice(
               `Assigned issue #${issueNumber} to GitHub Copilot coding agent.`,
             );
-
