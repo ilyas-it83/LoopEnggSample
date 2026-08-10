@@ -90,18 +90,20 @@ function SearchResults() {
             <button className="link-button" type="button" onClick={() => { setCategories([]); setFuel([]); setMinimumPassengers(undefined); }}>Clear all filters</button>
           </aside>
           <section aria-live="polite">
-            <div className="result-toolbar">
-              <strong>{results.length} matching vehicles</strong>
-              <label>Sort by{" "}
-                <select value={sort} onChange={(event) => setSort(event.target.value)}>
-                  <option value="recommended">Recommended</option>
-                  <option value="price-asc">Price: low to high</option>
-                  <option value="price-desc">Price: high to low</option>
-                  <option value="capacity">Passenger capacity</option>
-                  <option value="name">Vehicle name</option>
-                </select>
-              </label>
-            </div>
+            {scenario !== "service-error" && (
+              <div className="result-toolbar">
+                <strong>{results.length} matching vehicles</strong>
+                <label>Sort by{" "}
+                  <select value={sort} onChange={(event) => setSort(event.target.value)}>
+                    <option value="recommended">Recommended</option>
+                    <option value="price-asc">Price: low to high</option>
+                    <option value="price-desc">Price: high to low</option>
+                    <option value="capacity">Passenger capacity</option>
+                    <option value="name">Vehicle name</option>
+                  </select>
+                </label>
+              </div>
+            )}
             {scenario === "service-error" ? (
               <div className="empty-state">
                 <h2>Vehicle results are unavailable</h2>
