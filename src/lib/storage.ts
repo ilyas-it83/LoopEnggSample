@@ -3,15 +3,18 @@
 import {
   buildQuote,
   defaultSearch,
+  validateSearch,
   validateSelectedExtras,
   vehicleAvailability,
 } from "./rental";
 import { MAX_COMPARISON_VEHICLES } from "./comparison";
-import { findVehicle, simulatedProfile } from "./fixtures";
+import { findVehicle, MOCK_CLOCK, simulatedProfile } from "./fixtures";
 import type {
   Booking,
   CheckoutDraft,
   DemoScenario,
+  Quote,
+  SearchCriteria,
   SelectedExtra,
   SimulatedProfile,
 } from "./types";
@@ -188,6 +191,99 @@ export function updateBookingVehicle(
   };
   saveBooking(updated);
   return updated;
+}
+
+export interface BookingDateTimeReview {
+  errors: string[];
+  search?: SearchCriteria;
+  quote?: Quote;
+  changed: boolean;
+}
+
+export function reviewBookingDateTimes(
+  booking: Booking,
+  pickupAt: string,
+  returnAt: string,
+  scenario: DemoScenario = getScenario(),
+): BookingDateTimeReview {
+  const existingPickup = Date.parse(booking.search.pickupAt);
+  if (
+    booking.status !== "Confirmed" ||
+    !Number.isFinite(existingPickup) ||
+    existingPickup <= Date.parse(MOCK_CLOCK)
+  ) {
+    return { errors: ["Only upcoming confirmed bookings can be modified."], changed: false };
+  }
+  const pickupInstant = Date.parse(pickupAt);
+  const returnInstant = Date.parse(returnAt);
+  const unchanged =
+    Number.isFinite(pickupInstant) &&
+    Number.isFinite(returnInstant) &&
+    pickupInstant === Date.parse(booking.search.pickupAt) &&
+    returnInstant === Date.parse(booking.search.returnAt);
+  if (unchanged) {
+    return { errors: [], changed: false };
+  }
+  if (scenario === "service-error") {
+    return {
+      errors: ["We could not update this booking right now. Try again after resetting the demo scenario."],
+      changed: false,
+    };
+  }
+
+  const search = { ...booking.search, pickupAt, returnAt };
+  const errors = validateSearch(search);
+  if (errors.length > 0) return { errors, changed: false };
+
+  const vehicle = findVehicle(booking.vehicleId);
+  if (!vehicle) {
+    return { errors: ["The booked vehicle could not be found."], changed: false };
+  }
+  const availability = vehicleAvailability(vehicle, search, scenario);
+  if (!availability.available) {
+    return {
+      errors: [availability.reason || "The booked vehicle is unavailable for the revised rental period."],
+      changed: false,
+    };
+  }
+
+  return {
+    errors: [],
+    search,
+    quote: buildQuote(search, vehicle, booking.extras, scenario),
+    changed: true,
+  };
+}
+
+export function updateBookingDateTimes(
+  booking: Booking,
+  pickupAt: string,
+  returnAt: string,
+  scenario: DemoScenario = getScenario(),
+): { booking: Booking; errors: string[]; changed: boolean } {
+  const latestBooking = findBooking(booking.id) ?? booking;
+  const review = reviewBookingDateTimes(latestBooking, pickupAt, returnAt, scenario);
+  if (review.errors.length > 0 || !review.changed) {
+    return { booking: latestBooking, errors: review.errors, changed: false };
+  }
+
+  const updated: Booking = {
+    ...latestBooking,
+    search: review.search!,
+    quote: review.quote!,
+    updatedAt: MOCK_CLOCK,
+    history: [
+      ...latestBooking.history,
+      {
+        id: `history-date-times-${latestBooking.history.length + 1}`,
+        action: "Modified",
+        at: MOCK_CLOCK,
+        detail: "Rental date-times were updated.",
+      },
+    ],
+  };
+  saveBooking(updated);
+  return { booking: updated, errors: [], changed: true };
 }
 
 export function cancelBooking(booking: Booking): Booking {
