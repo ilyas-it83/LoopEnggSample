@@ -28,3 +28,32 @@ Feature: Search for an available rental vehicle
     When the customer selects "Hand controls" and "Wheelchair-accessible entry"
     Then no vehicle cards are displayed
     And recovery guidance is displayed
+
+  Scenario: Customer filters results by estimated price range
+    Given available vehicles exist at "Harbor International Airport"
+    When the customer applies an estimated total maximum of "$200"
+    Then only vehicles with an estimated total at or below "$200" are displayed
+
+  @error
+  Scenario: Customer enters an invalid estimated price range
+    Given available vehicles exist at "Harbor International Airport"
+    When the customer applies a minimum estimated total greater than the maximum
+    Then the price filter is not applied
+    And accessible recovery guidance is displayed
+
+  Scenario: Customer filters results by transmission type
+    Given available vehicles exist at "Harbor International Airport"
+    When the customer filters results by "Manual" transmission
+    Then only vehicles with "Manual" transmission are displayed
+
+  Scenario: Customer filters results by passenger capacity
+    Given available vehicles exist at "Harbor International Airport"
+    When the customer filters for at least 7 passengers
+    Then only vehicles with at least 7 seats are displayed
+
+  @error
+  Scenario: Vehicle service error prevents unavailable results
+    Given the "Service error" demo scenario is active
+    When the customer searches with valid criteria
+    Then no vehicle cards are displayed
+    And recovery guidance is displayed

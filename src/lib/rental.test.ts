@@ -3,10 +3,14 @@ import { findVehicle, vehicles } from "./fixtures";
 import {
   buildQuote,
   defaultSearch,
+  filterVehicles,
   filterVehiclesByAccessibility,
+  filterVehiclesByEstimatedPrice,
+  filterVehiclesByPassengerCapacity,
   promotionMessage,
   rentalDays,
   searchVehicles,
+  validateEstimatedPriceRange,
   validateSearch,
 } from "./rental";
 
@@ -34,14 +38,100 @@ describe("rental search rules", () => {
     expect(results.every((vehicle) => vehicle.minimumDriverAge <= 21)).toBe(true);
   });
 
+  it("filters vehicles by their estimated total inclusively", () => {
+    const available = searchVehicles(defaultSearch);
+    const results = filterVehiclesByEstimatedPrice(available, defaultSearch, { max: 20000 });
+
+    expect(results).not.toHaveLength(0);
+    expect(results).toHaveLength(2);
+    expect(results.every((vehicle) => buildQuote(defaultSearch, vehicle).total <= 20000)).toBe(true);
+  });
+
+  it("includes an estimated total at the price range boundary", () => {
+    const available = searchVehicles(defaultSearch);
+    const boundary = Math.min(...available.map((vehicle) => buildQuote(defaultSearch, vehicle).total));
+
+    expect(filterVehiclesByEstimatedPrice(available, defaultSearch, { min: boundary, max: boundary }))
+      .toHaveLength(1);
+  });
+
+  it("rejects invalid estimated price ranges", () => {
+    expect(validateEstimatedPriceRange({ min: -1, max: -2 })).toEqual([
+      "Minimum estimated price must be a non-negative whole amount.",
+      "Maximum estimated price must be a non-negative whole amount.",
+    ]);
+    expect(validateEstimatedPriceRange({ min: 20000, max: 10000 })).toContain("Minimum estimated price cannot be greater than maximum estimated price.");
+    expect(filterVehiclesByEstimatedPrice(searchVehicles(defaultSearch), defaultSearch, { min: 20000, max: 10000 })).toEqual([]);
+  });
+
+  it("filters deterministic results by transmission type", () => {
+    const available = searchVehicles(defaultSearch);
+
+    expect(filterVehicles(available, { transmissions: ["Manual"] })).toEqual(
+      expect.arrayContaining([expect.objectContaining({ transmission: "Manual" })]),
+    );
+    expect(filterVehicles(available, { transmissions: ["Automatic"] })).toEqual(
+      expect.arrayContaining([expect.objectContaining({ transmission: "Automatic" })]),
+    );
+    expect(filterVehicles(available, { transmissions: ["Manual"] }).every((vehicle) => vehicle.transmission === "Manual")).toBe(true);
+    expect(filterVehicles(available, { transmissions: ["Automatic"] }).every((vehicle) => vehicle.transmission === "Automatic")).toBe(true);
+  });
+
+  it("returns no results for an unavailable transmission and category combination", () => {
+    expect(filterVehicles(vehicles, { categories: ["Luxury"], transmissions: ["Manual"] })).toEqual([]);
+  });
+
+  it("filters available vehicles to the requested passenger capacity", () => {
+    expect(filterVehiclesByPassengerCapacity(searchVehicles(defaultSearch), 7).map((vehicle) => vehicle.id))
+      .toEqual(["van-2", "van-3"]);
+  });
+
+  it("filters available vehicles for the 5+ passenger option", () => {
+    expect(filterVehiclesByPassengerCapacity(searchVehicles(defaultSearch), 5).map((vehicle) => vehicle.id))
+      .toEqual([
+        "economy-2",
+        "economy-3",
+        "compact-1",
+        "compact-2",
+        "compact-4",
+        "midsize-1",
+        "midsize-3",
+        "midsize-4",
+        "full-size-2",
+        "full-size-3",
+        "suv-1",
+        "suv-2",
+        "suv-4",
+        "luxury-1",
+        "luxury-3",
+        "luxury-4",
+        "van-2",
+        "van-3",
+        "electric-1",
+        "electric-2",
+      ]);
+  });
+
+  it("preserves available vehicles when no passenger capacity is selected", () => {
+    const results = searchVehicles(defaultSearch);
+    expect(filterVehiclesByPassengerCapacity(results)).toEqual(results);
+  });
+
   it("returns only vehicles with every selected accessibility feature", () => {
-    const accessibleVehicles = filterVehiclesByAccessibility(vehicles, ["Wheelchair-accessible entry"]);
+    const accessibleVehicles = filterVehiclesByAccessibility(
+      vehicles,
+      ["Wheelchair-accessible entry"],
+    );
 
     expect(accessibleVehicles).not.toHaveLength(0);
-    expect(accessibleVehicles.every((vehicle) => vehicle.accessibilityFeatures.includes("Wheelchair-accessible entry"))).toBe(true);
+    expect(
+      accessibleVehicles.every((vehicle) =>
+        vehicle.accessibilityFeatures.includes("Wheelchair-accessible entry")),
+    ).toBe(true);
     expect(filterVehiclesByAccessibility(accessibleVehicles, ["Hand controls"])).toEqual([]);
   });
 });
+
 
 describe("rental pricing rules", () => {
   const vehicle = findVehicle("compact-1")!;

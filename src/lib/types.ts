@@ -58,6 +58,11 @@ export interface SearchCriteria {
   promoCode?: string;
 }
 
+export interface EstimatedPriceRange {
+  min?: number;
+  max?: number;
+}
+
 export interface Extra {
   id: string;
   name: string;
@@ -102,6 +107,11 @@ export interface DriverDetails {
   licenseNumber: string;
   licenseCountry: string;
   licenseExpiry: string;
+}
+
+export interface SimulatedProfile {
+  renter: RenterDetails;
+  driver: DriverDetails;
 }
 
 export interface PaymentSummary {

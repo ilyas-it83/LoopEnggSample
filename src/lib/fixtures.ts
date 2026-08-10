@@ -1,6 +1,30 @@
-import type { AccessibilityFeature, Extra, RentalLocation, Vehicle, VehicleCategory } from "./types";
+import type {
+  AccessibilityFeature,
+  Extra,
+  RentalLocation,
+  SimulatedProfile,
+  Vehicle,
+  VehicleCategory,
+} from "./types";
 
 export const MOCK_CLOCK = "2026-08-10T10:00";
+
+export const simulatedProfile: SimulatedProfile = {
+  renter: {
+    firstName: "Jordan",
+    lastName: "Lee",
+    email: "jordan.lee@example.test",
+    phone: "+1 555 010 2026",
+  },
+  driver: {
+    firstName: "Jordan",
+    lastName: "Lee",
+    dateOfBirth: "1990-04-18",
+    licenseNumber: "DEMO-48291",
+    licenseCountry: "United States",
+    licenseExpiry: "2029-04-18",
+  },
+};
 
 export const locations: RentalLocation[] = [
   { id: "harbor-airport", name: "Harbor International Airport", city: "Harbor City", type: "Airport", address: "1 Terminal Way", timezone: "America/New_York" },
@@ -27,7 +51,7 @@ const vehicleSeeds: Array<{
   rate: number;
   accent: string;
 }> = [
-  { category: "Economy", examples: ["Nissan Versa", "Kia Rio", "Mitsubishi Mirage", "Hyundai Accent"], passengers: 5, luggage: 2, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Bluetooth", "Rear camera", "USB charging"], accessibilityFeatures: ["Hand controls"], minimumDriverAge: 21, rate: 4900, accent: "#cfe8df" },
+  { category: "Economy", examples: ["Nissan Versa", "Kia Rio", "Mitsubishi Mirage", "Hyundai Accent"], passengers: 5, luggage: 2, doors: 4, transmission: "Manual", fuelType: "Petrol", features: ["Bluetooth", "Rear camera", "USB charging"], accessibilityFeatures: ["Hand controls"], minimumDriverAge: 21, rate: 4900, accent: "#cfe8df" },
   { category: "Compact", examples: ["Toyota Corolla", "Honda Civic", "Volkswagen Jetta", "Mazda 3"], passengers: 5, luggage: 3, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Adaptive cruise", "CarPlay", "Lane assist"], accessibilityFeatures: [], minimumDriverAge: 21, rate: 6200, accent: "#d9e8fb" },
   { category: "Midsize", examples: ["Toyota Camry", "Honda Accord", "Hyundai Sonata", "Subaru Legacy"], passengers: 5, luggage: 4, doors: 4, transmission: "Automatic", fuelType: "Hybrid", features: ["Dual-zone climate", "CarPlay", "Blind-spot alert"], accessibilityFeatures: [], minimumDriverAge: 21, rate: 7600, accent: "#f4dfc4" },
   { category: "Full-size", examples: ["Chevrolet Malibu", "Nissan Altima", "Chrysler 300", "Volkswagen Arteon"], passengers: 5, luggage: 4, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Premium audio", "Navigation", "Heated seats"], accessibilityFeatures: [], minimumDriverAge: 25, rate: 9100, accent: "#eadcf4" },
