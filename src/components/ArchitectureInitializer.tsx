@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DRIVEWISE_FIXTURE_VERSION, MOCK_CLOCK, locations, vehicles } from "@/lib/fixtures";
 import { getScenario } from "@/lib/storage";
@@ -9,6 +9,12 @@ type InitializationState = "idle" | "ready" | "blocked";
 
 export function ArchitectureInitializer() {
   const [state, setState] = useState<InitializationState>("idle");
+
+  useEffect(() => {
+    const resetState = () => setState("idle");
+    window.addEventListener("drivewise-storage", resetState);
+    return () => window.removeEventListener("drivewise-storage", resetState);
+  }, []);
 
   function initialize() {
     if (getScenario() === "service-error") {

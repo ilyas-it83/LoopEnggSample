@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DRIVEWISE_FIXTURE_VERSION, MOCK_CLOCK, locations, vehicles } from "@/lib/fixtures";
@@ -37,5 +37,9 @@ describe("ArchitectureInitializer", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent("Architecture initialization is unavailable");
     expect(screen.getByRole("alert")).toHaveTextContent("Switch to Normal in Demo controls and retry");
+
+    resetDemo();
+
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
   });
 });
