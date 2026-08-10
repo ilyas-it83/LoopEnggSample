@@ -111,6 +111,21 @@ describe("BDD-04 mock API error contracts", () => {
     });
   });
 
+  it("rejects a non-numeric driver age with the search validation envelope", async () => {
+    const response = await searchVehicles(
+      request("/api/vehicles/search?driverAge=abc"),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await envelope<Vehicle[]>(response)).toMatchObject({
+      data: null,
+      error: {
+        code: "INVALID_SEARCH",
+        message: "Driver age must be between 18 and 90.",
+      },
+    });
+  });
+
   it("rejects a quote for an unknown fixture vehicle", async () => {
     const response = await createQuote(request("/api/quotes", {
       search: defaultSearch,

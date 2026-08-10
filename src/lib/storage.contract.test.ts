@@ -30,9 +30,11 @@ describe("BDD-04 browser repository contract", () => {
 
   it("prevents an invalid state transition without mutating the booking", () => {
     const [booking] = getBookings();
+    const original = structuredClone(booking);
 
     expect(() => updateBookingVehicle(booking, booking.vehicleId))
       .toThrow("Choose a different vehicle before saving.");
+    expect(booking).toEqual(original);
     expect(getBookings()).toEqual([booking]);
   });
 });

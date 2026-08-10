@@ -30,6 +30,11 @@ describe("rental search rules", () => {
       .toContain("Pickup cannot be earlier than the mock clock.");
   });
 
+  it("rejects a non-numeric driver age", () => {
+    expect(validateSearch({ ...defaultSearch, driverAge: Number.NaN }))
+      .toContain("Driver age must be between 18 and 90.");
+  });
+
   it("rounds a partial rental day up", () => {
     expect(rentalDays({ ...defaultSearch, pickupAt: "2026-08-12T10:00", returnAt: "2026-08-13T11:00" })).toBe(2);
   });
