@@ -71,4 +71,3 @@ export const extras: Extra[] = [
 export const findLocation = (id: string) => locations.find((location) => location.id === id);
 export const findVehicle = (id: string) => vehicles.find((vehicle) => vehicle.id === id);
 export const findExtra = (id: string) => extras.find((extra) => extra.id === id);
-
