@@ -1,6 +1,30 @@
-import type { Extra, RentalLocation, Vehicle, VehicleCategory } from "./types";
+import type {
+  AccessibilityFeature,
+  Extra,
+  RentalLocation,
+  SimulatedProfile,
+  Vehicle,
+  VehicleCategory,
+} from "./types";
 
 export const MOCK_CLOCK = "2026-08-10T10:00";
+
+export const simulatedProfile: SimulatedProfile = {
+  renter: {
+    firstName: "Jordan",
+    lastName: "Lee",
+    email: "jordan.lee@example.test",
+    phone: "+1 555 010 2026",
+  },
+  driver: {
+    firstName: "Jordan",
+    lastName: "Lee",
+    dateOfBirth: "1990-04-18",
+    licenseNumber: "DEMO-48291",
+    licenseCountry: "United States",
+    licenseExpiry: "2029-04-18",
+  },
+};
 
 export const locations: RentalLocation[] = [
   { id: "harbor-airport", name: "Harbor International Airport", city: "Harbor City", type: "Airport", address: "1 Terminal Way", timezone: "America/New_York" },
@@ -22,18 +46,19 @@ const vehicleSeeds: Array<{
   transmission: "Automatic" | "Manual";
   fuelType: "Petrol" | "Hybrid" | "Electric";
   features: string[];
+  accessibilityFeatures: AccessibilityFeature[];
   minimumDriverAge: number;
   rate: number;
   accent: string;
 }> = [
-  { category: "Economy", examples: ["Nissan Versa", "Kia Rio", "Mitsubishi Mirage", "Hyundai Accent"], passengers: 5, luggage: 2, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Bluetooth", "Rear camera", "USB charging"], minimumDriverAge: 21, rate: 4900, accent: "#cfe8df" },
-  { category: "Compact", examples: ["Toyota Corolla", "Honda Civic", "Volkswagen Jetta", "Mazda 3"], passengers: 5, luggage: 3, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Adaptive cruise", "CarPlay", "Lane assist"], minimumDriverAge: 21, rate: 6200, accent: "#d9e8fb" },
-  { category: "Midsize", examples: ["Toyota Camry", "Honda Accord", "Hyundai Sonata", "Subaru Legacy"], passengers: 5, luggage: 4, doors: 4, transmission: "Automatic", fuelType: "Hybrid", features: ["Dual-zone climate", "CarPlay", "Blind-spot alert"], minimumDriverAge: 21, rate: 7600, accent: "#f4dfc4" },
-  { category: "Full-size", examples: ["Chevrolet Malibu", "Nissan Altima", "Chrysler 300", "Volkswagen Arteon"], passengers: 5, luggage: 4, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Premium audio", "Navigation", "Heated seats"], minimumDriverAge: 25, rate: 9100, accent: "#eadcf4" },
-  { category: "SUV", examples: ["Toyota RAV4", "Ford Explorer", "Jeep Grand Cherokee", "Subaru Forester"], passengers: 5, luggage: 5, doors: 5, transmission: "Automatic", fuelType: "Hybrid", features: ["All-wheel drive", "Power liftgate", "Adaptive cruise"], minimumDriverAge: 25, rate: 10900, accent: "#d9e0c8" },
-  { category: "Luxury", examples: ["BMW 5 Series", "Mercedes E-Class", "Audi A6", "Volvo S90"], passengers: 5, luggage: 4, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Leather interior", "Premium audio", "360 camera"], minimumDriverAge: 25, rate: 16800, accent: "#e6d7c5" },
-  { category: "Van", examples: ["Chrysler Pacifica", "Toyota Sienna", "Kia Carnival"], passengers: 7, luggage: 6, doors: 5, transmission: "Automatic", fuelType: "Hybrid", features: ["Power doors", "Three rows", "Rear climate"], minimumDriverAge: 25, rate: 13200, accent: "#d6e4e8" },
-  { category: "Electric", examples: ["Tesla Model 3", "Hyundai Ioniq 5", "Kia EV6"], passengers: 5, luggage: 3, doors: 4, transmission: "Automatic", fuelType: "Electric", features: ["300-mile range", "Fast charging", "Navigation"], minimumDriverAge: 25, rate: 12400, accent: "#d7d7ef" },
+  { category: "Economy", examples: ["Nissan Versa", "Kia Rio", "Mitsubishi Mirage", "Hyundai Accent"], passengers: 5, luggage: 2, doors: 4, transmission: "Manual", fuelType: "Petrol", features: ["Bluetooth", "Rear camera", "USB charging"], accessibilityFeatures: ["Hand controls"], minimumDriverAge: 21, rate: 4900, accent: "#cfe8df" },
+  { category: "Compact", examples: ["Toyota Corolla", "Honda Civic", "Volkswagen Jetta", "Mazda 3"], passengers: 5, luggage: 3, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Adaptive cruise", "CarPlay", "Lane assist"], accessibilityFeatures: [], minimumDriverAge: 21, rate: 6200, accent: "#d9e8fb" },
+  { category: "Midsize", examples: ["Toyota Camry", "Honda Accord", "Hyundai Sonata", "Subaru Legacy"], passengers: 5, luggage: 4, doors: 4, transmission: "Automatic", fuelType: "Hybrid", features: ["Dual-zone climate", "CarPlay", "Blind-spot alert"], accessibilityFeatures: [], minimumDriverAge: 21, rate: 7600, accent: "#f4dfc4" },
+  { category: "Full-size", examples: ["Chevrolet Malibu", "Nissan Altima", "Chrysler 300", "Volkswagen Arteon"], passengers: 5, luggage: 4, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Premium audio", "Navigation", "Heated seats"], accessibilityFeatures: [], minimumDriverAge: 25, rate: 9100, accent: "#eadcf4" },
+  { category: "SUV", examples: ["Toyota RAV4", "Ford Explorer", "Jeep Grand Cherokee", "Subaru Forester"], passengers: 5, luggage: 5, doors: 5, transmission: "Automatic", fuelType: "Hybrid", features: ["All-wheel drive", "Power liftgate", "Adaptive cruise"], accessibilityFeatures: ["Wheelchair-accessible entry"], minimumDriverAge: 25, rate: 10900, accent: "#d9e0c8" },
+  { category: "Luxury", examples: ["BMW 5 Series", "Mercedes E-Class", "Audi A6", "Volvo S90"], passengers: 5, luggage: 4, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Leather interior", "Premium audio", "360 camera"], accessibilityFeatures: [], minimumDriverAge: 25, rate: 16800, accent: "#e6d7c5" },
+  { category: "Van", examples: ["Chrysler Pacifica", "Toyota Sienna", "Kia Carnival"], passengers: 7, luggage: 6, doors: 5, transmission: "Automatic", fuelType: "Hybrid", features: ["Power doors", "Three rows", "Rear climate"], accessibilityFeatures: ["Wheelchair-accessible entry"], minimumDriverAge: 25, rate: 13200, accent: "#d6e4e8" },
+  { category: "Electric", examples: ["Tesla Model 3", "Hyundai Ioniq 5", "Kia EV6"], passengers: 5, luggage: 3, doors: 4, transmission: "Automatic", fuelType: "Electric", features: ["300-mile range", "Fast charging", "Navigation"], accessibilityFeatures: [], minimumDriverAge: 25, rate: 12400, accent: "#d7d7ef" },
 ];
 
 export const vehicles: Vehicle[] = vehicleSeeds.flatMap((seed, seedIndex) =>
@@ -48,6 +73,7 @@ export const vehicles: Vehicle[] = vehicleSeeds.flatMap((seed, seedIndex) =>
     transmission: seed.transmission,
     fuelType: seed.fuelType,
     features: seed.features,
+    accessibilityFeatures: seed.accessibilityFeatures,
     minimumDriverAge: seed.minimumDriverAge,
     dailyRate: seed.rate + modelIndex * 500,
     locationIds: locations
@@ -59,16 +85,15 @@ export const vehicles: Vehicle[] = vehicleSeeds.flatMap((seed, seedIndex) =>
 );
 
 export const extras: Extra[] = [
-  { id: "protection-basic", name: "Essential protection", description: "Reduced damage responsibility for this demo rental.", pricingModel: "per-day", price: 1800, maxQuantity: 1 },
-  { id: "protection-premium", name: "Premium protection", description: "Lowest mock responsibility plus tire and glass cover.", pricingModel: "per-day", price: 3200, maxQuantity: 1 },
-  { id: "additional-driver", name: "Additional driver", description: "Add one additional eligible driver.", pricingModel: "per-day", price: 1200, maxQuantity: 2 },
-  { id: "child-seat", name: "Child safety seat", description: "Age-appropriate child seat, subject to mock availability.", pricingModel: "per-day", price: 900, maxQuantity: 3 },
-  { id: "gps", name: "Portable navigation", description: "A dedicated navigation device.", pricingModel: "per-day", price: 700, maxQuantity: 1 },
-  { id: "roadside", name: "Roadside assistance", description: "Expanded roadside support for the rental period.", pricingModel: "per-rental", price: 2400, maxQuantity: 1 },
-  { id: "prepaid-fuel", name: "Prepaid fuel", description: "Return without refilling the tank.", pricingModel: "per-rental", price: 6500, maxQuantity: 1 },
+  { id: "protection-basic", name: "Essential protection", description: "Reduced damage responsibility for this demo rental.", pricingModel: "per-day", price: 1800, maxQuantity: 1, availableQuantity: 1 },
+  { id: "protection-premium", name: "Premium protection", description: "Lowest mock responsibility plus tire and glass cover.", pricingModel: "per-day", price: 3200, maxQuantity: 1, availableQuantity: 1 },
+  { id: "additional-driver", name: "Additional driver", description: "Add one additional eligible driver.", pricingModel: "per-day", price: 1200, maxQuantity: 2, availableQuantity: 1 },
+  { id: "child-seat", name: "Child safety seat", description: "Age-appropriate child seat, subject to mock availability.", pricingModel: "per-day", price: 900, maxQuantity: 3, availableQuantity: 2 },
+  { id: "gps", name: "Portable navigation", description: "A dedicated navigation device.", pricingModel: "per-day", price: 700, maxQuantity: 1, availableQuantity: 0 },
+  { id: "roadside", name: "Roadside assistance", description: "Expanded roadside support for the rental period.", pricingModel: "per-rental", price: 2400, maxQuantity: 1, availableQuantity: 1 },
+  { id: "prepaid-fuel", name: "Prepaid fuel", description: "Return without refilling the tank.", pricingModel: "per-rental", price: 6500, maxQuantity: 1, availableQuantity: 1 },
 ];
 
 export const findLocation = (id: string) => locations.find((location) => location.id === id);
 export const findVehicle = (id: string) => vehicles.find((vehicle) => vehicle.id === id);
 export const findExtra = (id: string) => extras.find((extra) => extra.id === id);
-

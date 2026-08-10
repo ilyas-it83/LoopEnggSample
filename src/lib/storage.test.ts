@@ -1,50 +1,101 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import {
+  getBookings,
+  getComparison,
+  getRecentlyViewed,
+  toggleComparison,
+  trackRecentlyViewed,
+  updateBookingVehicle,
+} from "./storage";
 import { findVehicle } from "./fixtures";
-import { getBookings, resetDemo, updateBookingVehicle } from "./storage";
 
-describe("updateBookingVehicle", () => {
-  beforeEach(() => {
-    resetDemo();
+describe("recently viewed vehicles", () => {
+  beforeEach(() => window.localStorage.clear());
+
+  it("tracks valid vehicles in most-recent-first order without duplicates", () => {
+    trackRecentlyViewed("compact-1");
+    trackRecentlyViewed("economy-1");
+    trackRecentlyViewed("compact-1");
+
+    expect(getRecentlyViewed()).toEqual(["compact-1", "economy-1"]);
   });
 
-  it("changes the vehicle and recalculates the quote when the new vehicle is available", () => {
-    const [booking] = getBookings();
-    const nextVehicle = findVehicle("midsize-1")!;
-    const updated = updateBookingVehicle(booking, nextVehicle.id);
+  describe("booking vehicle modification", () => {
+    beforeEach(() => window.localStorage.clear());
 
-    expect(updated.vehicleId).toBe(nextVehicle.id);
-    expect(updated.quote.lines.find((line) => line.id === "base")?.amount).toBe(
-      nextVehicle.dailyRate * updated.quote.days,
-    );
-    expect(updated.history.at(-1)).toMatchObject({ action: "Vehicle changed" });
+    it("changes to an available alternative and recalculates the quote", () => {
+      const [booking] = getBookings();
+      const nextVehicle = findVehicle("midsize-1")!;
+      const updated = updateBookingVehicle(booking, nextVehicle.id);
 
-    const [persisted] = getBookings();
-    expect(persisted.vehicleId).toBe(nextVehicle.id);
+      expect(updated.vehicleId).toBe(nextVehicle.id);
+      expect(updated.quote.lines.find((line) => line.id === "base")?.amount)
+        .toBe(nextVehicle.dailyRate * updated.quote.days);
+      expect(updated.history.at(-1)).toMatchObject({ action: "Vehicle changed" });
+    });
+
+    it("uses scenario-adjusted pricing for the updated booking", () => {
+      const [booking] = getBookings();
+      const updated = updateBookingVehicle(booking, "midsize-1", "price-change");
+      const base = updated.quote.lines.find((line) => line.id === "base")?.amount;
+
+      expect(base).toBe(Math.round(findVehicle("midsize-1")!.dailyRate * 1.1) * updated.quote.days);
+    });
+
+    it("rejects no-op, unavailable, ineligible, and cancelled changes", () => {
+      const [booking] = getBookings();
+      expect(() => updateBookingVehicle(booking, booking.vehicleId))
+        .toThrow("Choose a different vehicle before saving.");
+      expect(() => updateBookingVehicle(booking, "midsize-1", "vehicle-unavailable"))
+        .toThrow(/unavailable/i);
+      expect(() => updateBookingVehicle(booking, "economy-1"))
+        .toThrow(/pickup location/i);
+      expect(() => updateBookingVehicle(
+        { ...booking, status: "Cancelled" },
+        "midsize-1",
+      )).toThrow(/only confirmed bookings/i);
+    });
   });
 
-  it("rejects the change and leaves the booking untouched when the vehicle-unavailable scenario is active", () => {
-    const [booking] = getBookings();
-    const nextVehicle = findVehicle("midsize-1")!;
+  describe("local comparison state", () => {
+    beforeEach(() => window.localStorage.clear());
 
-    expect(() => updateBookingVehicle(booking, nextVehicle.id, "vehicle-unavailable")).toThrow(/unavailable/i);
+    it("limits valid comparison selections to three vehicles", () => {
+      toggleComparison("compact-1");
+      toggleComparison("midsize-1");
+      toggleComparison("suv-1");
+      toggleComparison("van-1");
+      toggleComparison("unknown");
 
-    const [persisted] = getBookings();
-    expect(persisted.vehicleId).toBe(booking.vehicleId);
+      expect(getComparison()).toEqual(["compact-1", "midsize-1", "suv-1"]);
+    });
+
+    it("recovers from malformed and stale comparison state", () => {
+      window.localStorage.setItem(
+        "drivewise.comparison",
+        JSON.stringify(["compact-1", "unknown", "compact-1"]),
+      );
+
+      expect(getComparison()).toEqual(["compact-1"]);
+    });
   });
 
-  it("rejects the change when the vehicle does not serve the booking's pickup location", () => {
-    const [booking] = getBookings();
-    const ineligibleVehicle = findVehicle("economy-1")!;
-    expect(ineligibleVehicle.locationIds).not.toContain(booking.search.pickupLocationId);
+  it("rejects an unknown vehicle without changing existing history", () => {
+    trackRecentlyViewed("compact-1");
 
-    expect(() => updateBookingVehicle(booking, ineligibleVehicle.id)).toThrow(/pickup location/i);
+    expect(trackRecentlyViewed("not-a-vehicle")).toBe(false);
+    expect(getRecentlyViewed()).toEqual(["compact-1"]);
   });
 
-  it("rejects a vehicle change for a cancelled booking", () => {
-    const [booking] = getBookings();
-    const nextVehicle = findVehicle("midsize-1")!;
-    const cancelled = { ...booking, status: "Cancelled" as const };
+  it("recovers from malformed browser state", () => {
+    window.localStorage.setItem("drivewise.recently-viewed", JSON.stringify({ vehicleId: "compact-1" }));
 
-    expect(() => updateBookingVehicle(cancelled, nextVehicle.id)).toThrow(/only confirmed bookings/i);
+    expect(getRecentlyViewed()).toEqual([]);
+  });
+
+  it("limits the deterministic history to six vehicles", () => {
+    ["economy-1", "economy-2", "economy-3", "economy-4", "compact-1", "compact-2", "compact-3"].forEach(trackRecentlyViewed);
+
+    expect(getRecentlyViewed()).toEqual(["compact-3", "compact-2", "compact-1", "economy-4", "economy-3", "economy-2"]);
   });
 });

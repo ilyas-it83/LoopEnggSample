@@ -5,8 +5,22 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PriceBreakdown } from "@/components/PriceBreakdown";
 import { extras, findLocation, findVehicle } from "@/lib/fixtures";
-import { formatDateTime, formatMoney, searchVehicles, vehicleAvailability } from "@/lib/rental";
-import { cancelBooking, findBooking, getScenario, updateBookingExtras, updateBookingVehicle } from "@/lib/storage";
+import {
+  buildQuote,
+  extraQuantityLimit,
+  formatDateTime,
+  formatMoney,
+  searchVehicles,
+  validateSelectedExtras,
+  vehicleAvailability,
+} from "@/lib/rental";
+import {
+  cancelBooking,
+  findBooking,
+  getScenario,
+  updateBookingExtras,
+  updateBookingVehicle,
+} from "@/lib/storage";
 import type { Booking, DemoScenario, SelectedExtra } from "@/lib/types";
 
 export default function ManageBookingPage() {
@@ -19,6 +33,7 @@ export default function ManageBookingPage() {
   const [vehicleError, setVehicleError] = useState("");
   const [scenario, setCurrentScenario] = useState<DemoScenario>("normal");
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const found = findBooking(params.bookingId);
@@ -42,15 +57,42 @@ export default function ManageBookingPage() {
     vehicle,
     ...searchVehicles(booking.search, scenario).filter((item) => item.id !== vehicle.id),
   ];
+  const selectedVehicle = findVehicle(selectedVehicleId);
+  const selectedVehicleAvailability = selectedVehicle
+    ? vehicleAvailability(selectedVehicle, booking.search, scenario)
+    : { available: false };
+  const canSaveVehicle =
+    selectedVehicleId !== booking.vehicleId && selectedVehicleAvailability.available;
 
-  function toggle(extraId: string) {
-    setSelectedExtras((current) => current.some((item) => item.id === extraId) ? current.filter((item) => item.id !== extraId) : [...current, { id: extraId, quantity: 1 }]);
+  function setQuantity(extraId: string, quantity: number) {
+    const extra = extras.find((item) => item.id === extraId)!;
+    const limit = extraQuantityLimit(extraId);
+    if (quantity > limit) {
+      setError(limit === 0
+        ? `${extra.name} is unavailable for this rental.`
+        : `Only ${limit} ${extra.name}${limit === 1 ? "" : "s"} are available for this rental.`);
+      return;
+    }
+    setSelectedExtras((current) => {
+      const selected = current.some((item) => item.id === extraId);
+      if (quantity === 0) return current.filter((item) => item.id !== extraId);
+      return selected
+        ? current.map((item) => item.id === extraId ? { ...item, quantity } : item)
+        : [...current, { id: extraId, quantity }];
+    });
+    setError("");
   }
 
   function saveExtras() {
+    const errors = validateSelectedExtras(selectedExtras);
+    if (errors.length > 0) {
+      setError(errors[0]);
+      return;
+    }
     const updated = updateBookingExtras(booking!, selectedExtras);
     setBooking(updated);
     setEditingExtras(false);
+    setError("");
     setMessage("Optional extras updated. The mock total was recalculated.");
   }
 
@@ -67,8 +109,8 @@ export default function ManageBookingPage() {
       setBooking(updated);
       setEditingVehicle(false);
       setMessage(`Vehicle updated to ${findVehicle(updated.vehicleId)?.example ?? "the selected vehicle"}. The mock total was recalculated.`);
-    } catch (error) {
-      setVehicleError(error instanceof Error ? error.message : "This vehicle could not be selected.");
+    } catch (caught) {
+      setVehicleError(caught instanceof Error ? caught.message : "This vehicle could not be selected.");
     }
   }
 
@@ -88,6 +130,7 @@ export default function ManageBookingPage() {
       </section>
       <div className="content-wrap">
         {message && <div className="alert alert-success" role="status" style={{ marginBottom: 20 }}>{message}</div>}
+        {error && <div className="alert alert-error" role="alert" style={{ marginBottom: 20 }}>{error}</div>}
         <div className="checkout-grid">
           <div>
             <section className="form-panel">
@@ -111,29 +154,35 @@ export default function ManageBookingPage() {
               ) : (
                 <div className="extra-list">
                   {vehicleError && <div className="alert alert-error" role="alert" style={{ marginBottom: 14 }}>{vehicleError}</div>}
-                  {candidateVehicles.map((candidate) => {
-                    const availability = vehicleAvailability(candidate, booking.search, scenario);
-                    const isCurrent = candidate.id === vehicle.id;
-                    return (
-                      <label className="extra-option" key={candidate.id}>
-                        <input
-                          type="radio"
-                          name="vehicle-selection"
-                          value={candidate.id}
-                          checked={selectedVehicleId === candidate.id}
-                          disabled={!availability.available && !isCurrent}
-                          onChange={() => setSelectedVehicleId(candidate.id)}
-                        />
-                        <span>
-                          <strong>{candidate.example}</strong>
-                          <p>{candidate.category} · {formatMoney(candidate.dailyRate)}/day{!availability.available ? ` · ${availability.reason}` : ""}</p>
-                        </span>
-                      </label>
-                    );
-                  })}
+                  <fieldset>
+                    <legend>Available vehicles</legend>
+                    {candidateVehicles.map((candidate) => {
+                      const availability = vehicleAvailability(candidate, booking.search, scenario);
+                      const isCurrent = candidate.id === vehicle.id;
+                      const quote = buildQuote(booking.search, candidate, booking.extras, scenario);
+                      const base = quote.lines.find((line) => line.id === "base")?.amount ?? 0;
+                      const displayedDailyRate = Math.round(base / quote.days);
+                      return (
+                        <label className="extra-option" key={candidate.id}>
+                          <input
+                            type="radio"
+                            name="vehicle-selection"
+                            value={candidate.id}
+                            checked={selectedVehicleId === candidate.id}
+                            disabled={!availability.available && !isCurrent}
+                            onChange={() => setSelectedVehicleId(candidate.id)}
+                          />
+                          <span>
+                            <strong>{candidate.example}</strong>
+                            <p>{candidate.category} · {formatMoney(displayedDailyRate)}/day{!availability.available ? ` · ${availability.reason}` : ""}</p>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </fieldset>
                   <div className="form-actions">
                     <button className="button button-secondary" type="button" onClick={() => setEditingVehicle(false)}>Discard</button>
-                    <button className="button button-primary" type="button" onClick={saveVehicle}>Save changes</button>
+                    <button className="button button-primary" type="button" disabled={!canSaveVehicle} onClick={saveVehicle}>Save vehicle change</button>
                   </div>
                 </div>
               )}
@@ -145,7 +194,35 @@ export default function ManageBookingPage() {
                 </>
               ) : (
                 <div className="extra-list">
-                  {extras.map((extra) => <label className="extra-option" key={extra.id}><input type="checkbox" checked={selectedExtras.some((item) => item.id === extra.id)} onChange={() => toggle(extra.id)} /><span><strong>{extra.name}</strong><p>{extra.description}</p></span><span>{formatMoney(extra.price)}</span></label>)}
+                  {extras.map((extra) => {
+                    const quantity = selectedExtras.find((item) => item.id === extra.id)?.quantity ?? 0;
+                    const limit = extraQuantityLimit(extra.id);
+                    const unavailable = limit === 0;
+                    return (
+                      <div className="extra-option" key={extra.id}>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={quantity > 0}
+                            disabled={unavailable && quantity === 0}
+                            onChange={() => setQuantity(extra.id, quantity > 0 ? 0 : 1)}
+                          />
+                          <span><strong>{extra.name}</strong><p>{extra.description}</p></span>
+                        </label>
+                        <span>{formatMoney(extra.price)}</span>
+                        {unavailable ? <span className="extra-availability">Unavailable</span> : quantity > 0 ? (
+                          <span className="quantity-controls">
+                            <button type="button" onClick={() => setQuantity(extra.id, quantity - 1)} aria-label={`Decrease ${extra.name} quantity`}>-</button>
+                            <output aria-label={`${extra.name} quantity`}>{quantity}</output>
+                            <button type="button" onClick={() => setQuantity(extra.id, quantity + 1)} disabled={quantity >= limit} aria-label={`Increase ${extra.name} quantity`}>+</button>
+                            <small>{limit} available</small>
+                          </span>
+                        ) : (
+                          <small className="extra-availability">{limit} available</small>
+                        )}
+                      </div>
+                    );
+                  })}
                   <div className="form-actions"><button className="button button-secondary" type="button" onClick={() => setEditingExtras(false)}>Discard</button><button className="button button-primary" type="button" onClick={saveExtras}>Save changes</button></div>
                 </div>
               )}
@@ -163,4 +240,3 @@ export default function ManageBookingPage() {
     </>
   );
 }
-
