@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { findVehicle } from "@/lib/fixtures";
@@ -46,7 +46,7 @@ describe("VehicleCard accessible interactions [BDD-02, BDD-03]", () => {
       "You can compare up to three vehicles. Remove a vehicle before adding another.",
     );
 
-    toggleComparison("economy-1");
+    act(() => toggleComparison("economy-1"));
     await user.click(compare);
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
