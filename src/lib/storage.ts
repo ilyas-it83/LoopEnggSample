@@ -206,9 +206,11 @@ export function reviewBookingDateTimes(
   returnAt: string,
   scenario: DemoScenario = getScenario(),
 ): BookingDateTimeReview {
+  const existingPickup = Date.parse(booking.search.pickupAt);
   if (
     booking.status !== "Confirmed" ||
-    Date.parse(booking.search.pickupAt) <= Date.parse(MOCK_CLOCK)
+    !Number.isFinite(existingPickup) ||
+    existingPickup <= Date.parse(MOCK_CLOCK)
   ) {
     return { errors: ["Only upcoming confirmed bookings can be modified."], changed: false };
   }

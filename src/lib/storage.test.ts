@@ -52,6 +52,8 @@ describe("recently viewed vehicles", () => {
         "2026-08-20T09:00",
       );
       expect(invalid.errors).toContain("Return must be later than pickup.");
+      expect(invalid.changed).toBe(false);
+      expect(findBooking(booking.id)?.history).toHaveLength(booking.history.length);
 
       const updated = updateBookingDateTimes(
         booking,
@@ -76,6 +78,11 @@ describe("recently viewed vehicles", () => {
 
       expect(reviewBookingDateTimes(
         { ...booking, search: { ...booking.search, pickupAt: "2026-08-09T09:00" } },
+        revisedPickup,
+        revisedReturn,
+      ).errors).toContain("Only upcoming confirmed bookings can be modified.");
+      expect(reviewBookingDateTimes(
+        { ...booking, search: { ...booking.search, pickupAt: "not-a-date" } },
         revisedPickup,
         revisedReturn,
       ).errors).toContain("Only upcoming confirmed bookings can be modified.");
