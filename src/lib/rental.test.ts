@@ -3,6 +3,7 @@ import { findVehicle } from "./fixtures";
 import {
   buildQuote,
   defaultSearch,
+  filterVehiclesByPassengerCapacity,
   promotionMessage,
   rentalDays,
   searchVehicles,
@@ -31,6 +32,42 @@ describe("rental search rules", () => {
   it("excludes vehicles above the driver's age eligibility", () => {
     const results = searchVehicles({ ...defaultSearch, driverAge: 21 });
     expect(results.every((vehicle) => vehicle.minimumDriverAge <= 21)).toBe(true);
+  });
+
+  it("filters available vehicles to the requested passenger capacity", () => {
+    expect(filterVehiclesByPassengerCapacity(searchVehicles(defaultSearch), 7).map((vehicle) => vehicle.id))
+      .toEqual(["van-2", "van-3"]);
+  });
+
+  it("filters available vehicles for the 5+ passenger option", () => {
+    expect(filterVehiclesByPassengerCapacity(searchVehicles(defaultSearch), 5).map((vehicle) => vehicle.id))
+      .toEqual([
+        "economy-2",
+        "economy-3",
+        "compact-1",
+        "compact-2",
+        "compact-4",
+        "midsize-1",
+        "midsize-3",
+        "midsize-4",
+        "full-size-2",
+        "full-size-3",
+        "suv-1",
+        "suv-2",
+        "suv-4",
+        "luxury-1",
+        "luxury-3",
+        "luxury-4",
+        "van-2",
+        "van-3",
+        "electric-1",
+        "electric-2",
+      ]);
+  });
+
+  it("preserves available vehicles when no passenger capacity is selected", () => {
+    const results = searchVehicles(defaultSearch);
+    expect(filterVehiclesByPassengerCapacity(results)).toEqual(results);
   });
 });
 
@@ -87,4 +124,3 @@ describe("rental pricing rules", () => {
     expect(buildQuote(defaultSearch, vehicle, [], "price-change")).toEqual(changed);
   });
 });
-

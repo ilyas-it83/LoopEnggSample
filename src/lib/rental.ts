@@ -37,13 +37,21 @@ export function searchVehicles(
   search: SearchCriteria,
   scenario: DemoScenario = "normal",
 ): Vehicle[] {
-  if (scenario === "no-results" || validateSearch(search).length > 0) return [];
+  if (scenario === "no-results" || scenario === "service-error" || validateSearch(search).length > 0) return [];
   return vehicles.filter(
     (vehicle) =>
       vehicle.inventory > 0 &&
       vehicle.locationIds.includes(search.pickupLocationId) &&
       search.driverAge >= vehicle.minimumDriverAge,
   );
+}
+
+export function filterVehiclesByPassengerCapacity(
+  availableVehicles: Vehicle[],
+  minimumPassengers?: number,
+): Vehicle[] {
+  if (minimumPassengers === undefined) return availableVehicles;
+  return availableVehicles.filter((vehicle) => vehicle.passengers >= minimumPassengers);
 }
 
 export function buildQuote(
@@ -122,4 +130,3 @@ export function formatDateTime(value: string): string {
     minute: "2-digit",
   }).format(new Date(value));
 }
-
