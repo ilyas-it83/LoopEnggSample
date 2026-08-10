@@ -10,6 +10,8 @@ export type VehicleCategory =
 
 export type FuelType = "Petrol" | "Hybrid" | "Electric";
 export type Transmission = "Automatic" | "Manual";
+export const ACCESSIBILITY_FEATURES = ["Hand controls", "Wheelchair-accessible entry"] as const;
+export type AccessibilityFeature = (typeof ACCESSIBILITY_FEATURES)[number];
 export type DemoScenario =
   | "normal"
   | "slow"
@@ -39,6 +41,7 @@ export interface Vehicle {
   transmission: Transmission;
   fuelType: FuelType;
   features: string[];
+  accessibilityFeatures: AccessibilityFeature[];
   minimumDriverAge: number;
   dailyRate: number;
   locationIds: string[];
@@ -53,6 +56,11 @@ export interface SearchCriteria {
   returnAt: string;
   driverAge: number;
   promoCode?: string;
+}
+
+export interface EstimatedPriceRange {
+  min?: number;
+  max?: number;
 }
 
 export interface Extra {
@@ -100,6 +108,11 @@ export interface DriverDetails {
   licenseNumber: string;
   licenseCountry: string;
   licenseExpiry: string;
+}
+
+export interface SimulatedProfile {
+  renter: RenterDetails;
+  driver: DriverDetails;
 }
 
 export interface PaymentSummary {

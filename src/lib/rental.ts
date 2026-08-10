@@ -1,11 +1,16 @@
 import { extras, findExtra, MOCK_CLOCK, vehicles } from "./fixtures";
 import type {
+  AccessibilityFeature,
   DemoScenario,
+  EstimatedPriceRange,
+  FuelType,
   Quote,
   QuoteLine,
   SearchCriteria,
   SelectedExtra,
+  Transmission,
   Vehicle,
+  VehicleCategory,
 } from "./types";
 
 export const defaultSearch: SearchCriteria = {
@@ -37,7 +42,7 @@ export function searchVehicles(
   search: SearchCriteria,
   scenario: DemoScenario = "normal",
 ): Vehicle[] {
-  if (scenario === "no-results" || validateSearch(search).length > 0) return [];
+  if (scenario === "no-results" || scenario === "service-error" || validateSearch(search).length > 0) return [];
   return vehicles.filter(
     (vehicle) =>
       vehicle.inventory > 0 &&
@@ -51,7 +56,7 @@ export function extraQuantityLimit(extraId: string): number {
   return extra ? Math.min(extra.maxQuantity, extra.availableQuantity) : 0;
 }
 
-function extraSelectionErrors(selectedExtras: SelectedExtra[]): Map<string, string> {
+function extraSelectionErrors(selectedExtras: readonly SelectedExtra[]): Map<string, string> {
   const quantities = new Map<string, number>();
   selectedExtras.forEach((selection) => {
     quantities.set(selection.id, (quantities.get(selection.id) ?? 0) + selection.quantity);
@@ -69,23 +74,84 @@ function extraSelectionErrors(selectedExtras: SelectedExtra[]): Map<string, stri
     } else if (quantity > extra.maxQuantity) {
       errors.set(extraId, `${extra.name} has a limit of ${extra.maxQuantity} per rental.`);
     } else if (quantity > extra.availableQuantity) {
-      errors.set(extraId, `Only ${extra.availableQuantity} ${extra.name}${extra.availableQuantity === 1 ? "" : "s"} ${extra.availableQuantity === 1 ? "is" : "are"} available for this rental.`);
+      errors.set(
+        extraId,
+        `Only ${extra.availableQuantity} ${extra.name}${extra.availableQuantity === 1 ? "" : "s"} ${extra.availableQuantity === 1 ? "is" : "are"} available for this rental.`,
+      );
     }
   });
   return errors;
 }
 
-export function validateSelectedExtras(selectedExtras: SelectedExtra[]): string[] {
+export function validateSelectedExtras(selectedExtras: readonly SelectedExtra[]): string[] {
   return [...extraSelectionErrors(selectedExtras).values()];
 }
 
-function validSelectedExtras(selectedExtras: SelectedExtra[]): SelectedExtra[] {
+function validSelectedExtras(selectedExtras: readonly SelectedExtra[]): SelectedExtra[] {
   const errors = extraSelectionErrors(selectedExtras);
   const quantities = new Map<string, number>();
   selectedExtras.forEach((selection) => {
-    if (!errors.has(selection.id)) quantities.set(selection.id, (quantities.get(selection.id) ?? 0) + selection.quantity);
+    if (!errors.has(selection.id)) {
+      quantities.set(selection.id, (quantities.get(selection.id) ?? 0) + selection.quantity);
+    }
   });
   return [...quantities].map(([id, quantity]) => ({ id, quantity }));
+}
+
+export function validateEstimatedPriceRange(range: EstimatedPriceRange): string[] {
+  const errors: string[] = [];
+  if (range.min !== undefined && (!Number.isSafeInteger(range.min) || range.min < 0)) errors.push("Minimum estimated price must be a non-negative whole amount.");
+  if (range.max !== undefined && (!Number.isSafeInteger(range.max) || range.max < 0)) errors.push("Maximum estimated price must be a non-negative whole amount.");
+  if (errors.length === 0 && range.min !== undefined && range.max !== undefined && range.min > range.max) {
+    errors.push("Minimum estimated price cannot be greater than maximum estimated price.");
+  }
+  return errors;
+}
+
+export function filterVehiclesByEstimatedPrice(
+  availableVehicles: Vehicle[],
+  search: SearchCriteria,
+  range: EstimatedPriceRange,
+  scenario: DemoScenario = "normal",
+): Vehicle[] {
+  if (validateEstimatedPriceRange(range).length > 0) return [];
+  return availableVehicles.filter((vehicle) => {
+    const total = buildQuote(search, vehicle, [], scenario).total;
+    return (range.min === undefined || total >= range.min) && (range.max === undefined || total <= range.max);
+  });
+}
+
+export function filterVehiclesByPassengerCapacity(
+  availableVehicles: Vehicle[],
+  minimumPassengers?: number,
+): Vehicle[] {
+  if (minimumPassengers === undefined) return availableVehicles;
+  return availableVehicles.filter((vehicle) => vehicle.passengers >= minimumPassengers);
+}
+
+export function filterVehiclesByAccessibility(
+  availableVehicles: readonly Vehicle[],
+  features: readonly AccessibilityFeature[],
+): Vehicle[] {
+  return features.length === 0
+    ? [...availableVehicles]
+    : availableVehicles.filter((vehicle) =>
+      features.every((feature) => vehicle.accessibilityFeatures.includes(feature)));
+}
+
+export interface VehicleFilters {
+  categories?: readonly VehicleCategory[];
+  fuelTypes?: readonly FuelType[];
+  transmissions?: readonly Transmission[];
+}
+
+export function filterVehicles(availableVehicles: readonly Vehicle[], filters: VehicleFilters): Vehicle[] {
+  return availableVehicles.filter(
+    (vehicle) =>
+      (!filters.categories?.length || filters.categories.includes(vehicle.category)) &&
+      (!filters.fuelTypes?.length || filters.fuelTypes.includes(vehicle.fuelType)) &&
+      (!filters.transmissions?.length || filters.transmissions.includes(vehicle.transmission)),
+  );
 }
 
 export function buildQuote(

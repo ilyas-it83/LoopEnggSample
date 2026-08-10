@@ -1,37 +1,21 @@
 "use client";
 
-import { buildQuote, defaultSearch } from "./rental";
-import { findVehicle } from "./fixtures";
+import { buildQuote, defaultSearch, validateSelectedExtras } from "./rental";
+import { findVehicle, simulatedProfile } from "./fixtures";
 import type {
   Booking,
   CheckoutDraft,
   DemoScenario,
-  DriverDetails,
-  RenterDetails,
   SelectedExtra,
+  SimulatedProfile,
 } from "./types";
 
 const KEYS = {
   checkout: "drivewise.checkout",
   bookings: "drivewise.bookings",
   favorites: "drivewise.favorites",
+  recentlyViewed: "drivewise.recently-viewed",
   scenario: "drivewise.scenario",
-};
-
-const demoRenter: RenterDetails = {
-  firstName: "Jordan",
-  lastName: "Lee",
-  email: "jordan.lee@example.test",
-  phone: "+1 555 010 2026",
-};
-
-const demoDriver: DriverDetails = {
-  firstName: "Jordan",
-  lastName: "Lee",
-  dateOfBirth: "1990-04-18",
-  licenseNumber: "DEMO-48291",
-  licenseCountry: "United States",
-  licenseExpiry: "2029-04-18",
 };
 
 function seedBooking(): Booking {
@@ -48,8 +32,8 @@ function seedBooking(): Booking {
     search,
     vehicleId: vehicle.id,
     extras: [{ id: "protection-basic", quantity: 1 }],
-    renter: demoRenter,
-    driver: demoDriver,
+    renter: simulatedProfile.renter,
+    driver: simulatedProfile.driver,
     quote: buildQuote(search, vehicle, [{ id: "protection-basic", quantity: 1 }]),
     payment: { brand: "Visa", last4: "4242" },
     createdAt: "2026-08-01T12:00:00.000Z",
@@ -109,6 +93,9 @@ export function findBooking(idOrReference: string): Booking | undefined {
 }
 
 export function createBooking(draft: CheckoutDraft): Booking {
+  const extraErrors = validateSelectedExtras(draft.extras);
+  if (extraErrors.length > 0) throw new Error(extraErrors[0]);
+
   const existing = getBookings().find(
     (booking) =>
       booking.vehicleId === draft.vehicleId &&
@@ -139,6 +126,9 @@ export function createBooking(draft: CheckoutDraft): Booking {
 }
 
 export function updateBookingExtras(booking: Booking, selectedExtras: SelectedExtra[]): Booking {
+  const extraErrors = validateSelectedExtras(selectedExtras);
+  if (extraErrors.length > 0) throw new Error(extraErrors[0]);
+
   const vehicle = findVehicle(booking.vehicleId)!;
   const now = new Date().toISOString();
   const updated: Booking = {
@@ -184,8 +174,27 @@ export function toggleFavorite(vehicleId: string): string[] {
   return next;
 }
 
+export function getRecentlyViewed(): string[] {
+  const stored = read<unknown>(KEYS.recentlyViewed, []);
+  if (!Array.isArray(stored)) return [];
+  return stored.filter(
+    (id): id is string => typeof id === "string" && Boolean(findVehicle(id)),
+  );
+}
+
+export function trackRecentlyViewed(vehicleId: string): boolean {
+  if (!findVehicle(vehicleId)) return false;
+  const recentlyViewed = getRecentlyViewed();
+  write(KEYS.recentlyViewed, [vehicleId, ...recentlyViewed.filter((id) => id !== vehicleId)].slice(0, 6));
+  return true;
+}
+
 export function getScenario(): DemoScenario {
   return read<DemoScenario>(KEYS.scenario, "normal");
+}
+
+export function getSimulatedProfile(): SimulatedProfile | null {
+  return getScenario() === "service-error" ? null : simulatedProfile;
 }
 
 export function setScenario(scenario: DemoScenario): void {
@@ -196,4 +205,3 @@ export function resetDemo(): void {
   Object.values(KEYS).forEach((key) => window.localStorage.removeItem(key));
   window.dispatchEvent(new Event("drivewise-storage"));
 }
-

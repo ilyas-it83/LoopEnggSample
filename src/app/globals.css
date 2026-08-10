@@ -92,6 +92,8 @@ main { min-height: 65vh; }
 .filter-panel h2 { margin-top: 0; font-size: 1.1rem; }
 .filter-group { padding: 18px 0; border-top: 1px solid var(--line); display: grid; gap: 10px; }
 .filter-group label { display: flex; gap: 9px; align-items: center; font-size: .9rem; }
+.filter-group input[type="number"] { width: 100%; min-height: 38px; margin-top: 4px; border: 1px solid var(--line); border-radius: 5px; padding: 6px 8px; }
+.filter-error { margin: 0; color: var(--danger); font-size: .82rem; line-height: 1.4; }
 .result-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; gap: 20px; }
 .result-toolbar select { min-height: 42px; border: 1px solid var(--line); background: white; padding: 0 10px; }
 .vehicle-list { display: grid; gap: 18px; }

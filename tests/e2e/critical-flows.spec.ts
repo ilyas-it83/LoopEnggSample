@@ -41,6 +41,44 @@ test("customer completes an approved mock booking", async ({ page }) => {
   await expect(page.getByRole("article").getByRole("link", { name: "Manage booking" })).toBeVisible();
 });
 
+test("simulated profile prefills checkout driver details", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Search cars" }).click();
+  await page.getByRole("link", { name: "View deal" }).first().click();
+  await page.getByRole("button", { name: "Choose this car" }).click();
+  await page.getByRole("button", { name: "Driver details" }).click();
+
+  await page.getByRole("button", { name: "Use simulated profile" }).click();
+
+  await expect(page.getByLabel("first Name").first()).toHaveValue("Jordan");
+  await expect(page.getByLabel("last Name").first()).toHaveValue("Lee");
+  await expect(page.getByLabel("email")).toHaveValue("jordan.lee@example.test");
+  await expect(page.getByLabel("phone")).toHaveValue("+1 555 010 2026");
+  await expect(page.getByLabel("Date of birth")).toHaveValue("1990-04-18");
+  await expect(page.getByLabel("License number")).toHaveValue("DEMO-48291");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Simulated profile details were added" }),
+  ).toBeVisible();
+});
+
+test("unavailable simulated profile does not change checkout details", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Search cars" }).click();
+  await page.getByRole("link", { name: "View deal" }).first().click();
+  await page.getByRole("button", { name: "Choose this car" }).click();
+  await page.getByRole("button", { name: "Driver details" }).click();
+  await page.goto("/demo-controls");
+  await page.getByRole("button", { name: /Service error/ }).click();
+  await page.goto("/checkout/driver");
+
+  await page.getByRole("button", { name: "Use simulated profile" }).click();
+
+  await expect(
+    page.getByRole("alert").filter({ hasText: "simulated profile is unavailable" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("email")).toHaveValue("");
+});
+
 test("guest retrieves the seeded booking", async ({ page }) => {
   await page.goto("/manage-booking");
   await page.getByRole("button", { name: "Find booking" }).click();
@@ -54,4 +92,86 @@ test("no-results scenario provides recovery guidance", async ({ page }) => {
   await page.goto("/search");
   await expect(page.getByRole("heading", { name: "No vehicles match this search" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
+});
+
+test("customer filters results by an accessibility-related feature", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByLabel("Wheelchair-accessible entry").check();
+
+  await expect(
+    page.getByRole("status").filter({ hasText: "matching vehicles" }),
+  ).toBeVisible();
+  await expect(page.getByText("Toyota Sienna")).toBeVisible();
+  await expect(page.getByText("Toyota RAV4")).toBeVisible();
+  await expect(page.getByText("Toyota Corolla")).not.toBeVisible();
+
+  await page.getByLabel("Hand controls").check();
+  await expect(page.getByRole("heading", { name: "No vehicles match this search" })).toBeVisible();
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  await expect(page.getByText("Toyota Sienna")).toBeVisible();
+});
+
+test("customer filters vehicles by estimated price range", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByLabel("Maximum", { exact: true }).fill("200");
+  await page.getByRole("button", { name: "Apply price range" }).click();
+
+  await expect(page.getByText("2 matching vehicles")).toBeVisible();
+});
+
+test("customer receives recovery guidance for an invalid estimated price range", async ({ page }) => {
+  await page.goto("/search");
+  const count = page.getByText(/matching vehicles/);
+  const baseline = await count.textContent();
+  expect(baseline).toBeTruthy();
+
+  await page.getByLabel("Minimum", { exact: true }).fill("200");
+  await page.getByLabel("Maximum", { exact: true }).fill("100");
+  await page.getByRole("button", { name: "Apply price range" }).click();
+
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Minimum estimated price cannot be greater than maximum estimated price." }),
+  ).toBeVisible();
+  await expect(count).toHaveText(baseline!);
+});
+
+test("customer filters available vehicles by transmission type", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByRole("checkbox", { name: "Manual" }).check();
+
+  await expect(page.getByText(/matching vehicles/)).toBeVisible();
+  const cards = page.locator(".vehicle-card");
+  await expect(cards).toHaveCount(2);
+  for (const card of await cards.all()) {
+    await expect(card).toContainText("Manual");
+    await expect(card).not.toContainText("Automatic");
+  }
+});
+
+test("unavailable transmission filter combination offers recovery", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByRole("checkbox", { name: "Luxury" }).check();
+  await page.getByRole("checkbox", { name: "Manual" }).check();
+
+  await expect(page.getByRole("heading", { name: "No vehicles match this search" })).toBeVisible();
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  await expect(page.getByText(/matching vehicles/)).toBeVisible();
+});
+
+test("customer filters results by passenger capacity", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByLabel("Minimum passenger capacity").selectOption("5");
+  await expect(page.getByText("20 matching vehicles")).toBeVisible();
+  await page.getByLabel("Minimum passenger capacity").selectOption("7");
+  await expect(page.getByText("2 matching vehicles")).toBeVisible();
+  await expect(page.getByRole("article")).toContainText(["7 seats", "7 seats"]);
+});
+
+test("service errors prevent unavailable vehicle results", async ({ page }) => {
+  await page.goto("/demo-controls");
+  await page.getByRole("button", { name: /Service error/ }).click();
+  await page.goto("/search");
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Vehicle results are unavailable" })).toBeVisible();
+  await expect(page.getByRole("article")).toHaveCount(0);
 });
