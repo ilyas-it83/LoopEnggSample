@@ -132,7 +132,11 @@ export function createBooking(draft: CheckoutDraft): Booking {
   return booking;
 }
 
-export function updateBookingExtras(booking: Booking, selectedExtras: SelectedExtra[]): Booking {
+export function updateBookingExtras(
+  booking: Booking,
+  selectedExtras: SelectedExtra[],
+  scenario: DemoScenario = "normal",
+): Booking {
   const extraErrors = validateSelectedExtras(selectedExtras);
   if (extraErrors.length > 0) throw new Error(extraErrors[0]);
 
@@ -141,7 +145,7 @@ export function updateBookingExtras(booking: Booking, selectedExtras: SelectedEx
   const updated: Booking = {
     ...booking,
     extras: selectedExtras,
-    quote: buildQuote(booking.search, vehicle, selectedExtras),
+    quote: buildQuote(booking.search, vehicle, selectedExtras, scenario),
     updatedAt: now,
     history: [
       ...booking.history,

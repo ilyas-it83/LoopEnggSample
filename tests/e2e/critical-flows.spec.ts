@@ -114,7 +114,9 @@ test("customer modifies the vehicle on an eligible booking", async ({ page }) =>
   await page.getByRole("button", { name: "Modify vehicle" }).click();
 
   const vehicleGroup = page.getByRole("group", { name: "Available vehicles" });
-  const alternative = vehicleGroup.locator('input[name="vehicle-selection"]:not([disabled])').nth(1);
+  const alternative = vehicleGroup.locator(
+    'input[name="vehicle-selection"]:not(:checked):not([disabled])',
+  ).first();
   const alternativeLabel = alternative.locator("xpath=ancestor::label");
   const alternativeName = await alternativeLabel.locator("strong").innerText();
   await alternative.check();

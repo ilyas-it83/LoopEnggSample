@@ -4,13 +4,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PriceBreakdown } from "@/components/PriceBreakdown";
-import { extras, findLocation, findVehicle } from "@/lib/fixtures";
+import { extras, findLocation, findVehicle, vehicles } from "@/lib/fixtures";
 import {
   buildQuote,
   extraQuantityLimit,
   formatDateTime,
   formatMoney,
-  searchVehicles,
   validateSelectedExtras,
   vehicleAvailability,
 } from "@/lib/rental";
@@ -55,7 +54,7 @@ export default function ManageBookingPage() {
   const canChange = booking.status === "Confirmed";
   const candidateVehicles = [
     vehicle,
-    ...searchVehicles(booking.search, scenario).filter((item) => item.id !== vehicle.id),
+    ...vehicles.filter((item) => item.id !== vehicle.id),
   ];
   const selectedVehicle = findVehicle(selectedVehicleId);
   const selectedVehicleAvailability = selectedVehicle
@@ -89,7 +88,7 @@ export default function ManageBookingPage() {
       setError(errors[0]);
       return;
     }
-    const updated = updateBookingExtras(booking!, selectedExtras);
+    const updated = updateBookingExtras(booking!, selectedExtras, scenario);
     setBooking(updated);
     setEditingExtras(false);
     setError("");
@@ -172,10 +171,10 @@ export default function ManageBookingPage() {
                             disabled={!availability.available && !isCurrent}
                             onChange={() => setSelectedVehicleId(candidate.id)}
                           />
-                          <span>
+                          <div>
                             <strong>{candidate.example}</strong>
                             <p>{candidate.category} · {formatMoney(displayedDailyRate)}/day{!availability.available ? ` · ${availability.reason}` : ""}</p>
-                          </span>
+                          </div>
                         </label>
                       );
                     })}

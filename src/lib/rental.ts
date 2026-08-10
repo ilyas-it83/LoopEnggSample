@@ -43,12 +43,7 @@ export function searchVehicles(
   scenario: DemoScenario = "normal",
 ): Vehicle[] {
   if (scenario === "no-results" || scenario === "service-error" || validateSearch(search).length > 0) return [];
-  return vehicles.filter(
-    (vehicle) =>
-      vehicle.inventory > 0 &&
-      vehicle.locationIds.includes(search.pickupLocationId) &&
-      search.driverAge >= vehicle.minimumDriverAge,
-  );
+  return vehicles.filter((vehicle) => vehicleAvailability(vehicle, search).available);
 }
 
 export function vehicleAvailability(
