@@ -55,3 +55,18 @@ test("no-results scenario provides recovery guidance", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "No vehicles match this search" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
 });
+
+test("customer filters results by an accessibility-related feature", async ({ page }) => {
+  await page.goto("/search");
+
+  await page.getByLabel("Wheelchair-accessible entry").check();
+
+  await expect(page.getByRole("status")).toContainText("matching vehicles");
+  await expect(page.getByText("Toyota Sienna")).toBeVisible();
+  await expect(page.getByText("Toyota Corolla")).not.toBeVisible();
+
+  await page.getByLabel("Hand controls").check();
+  await expect(page.getByRole("heading", { name: "No vehicles match this search" })).toBeVisible();
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  await expect(page.getByText("Toyota Sienna")).toBeVisible();
+});

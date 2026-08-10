@@ -4,9 +4,9 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchForm } from "@/components/SearchForm";
 import { VehicleCard } from "@/components/VehicleCard";
-import { buildQuote, defaultSearch, searchVehicles } from "@/lib/rental";
+import { buildQuote, defaultSearch, filterVehiclesByAccessibility, searchVehicles } from "@/lib/rental";
 import { getScenario } from "@/lib/storage";
-import type { DemoScenario, SearchCriteria, VehicleCategory } from "@/lib/types";
+import type { AccessibilityFeature, DemoScenario, SearchCriteria, VehicleCategory } from "@/lib/types";
 
 function SearchResults() {
   const params = useSearchParams();
@@ -21,6 +21,7 @@ function SearchResults() {
   const [scenario, setCurrentScenario] = useState<DemoScenario>("normal");
   const [categories, setCategories] = useState<VehicleCategory[]>([]);
   const [fuel, setFuel] = useState<string[]>([]);
+  const [accessibilityFeatures, setAccessibilityFeatures] = useState<AccessibilityFeature[]>([]);
   const [sort, setSort] = useState("recommended");
 
   useEffect(() => {
@@ -30,12 +31,14 @@ function SearchResults() {
     return () => window.removeEventListener("drivewise-storage", update);
   }, []);
 
-  const results = searchVehicles(search, scenario)
-    .filter(
+  const results = filterVehiclesByAccessibility(
+    searchVehicles(search, scenario).filter(
       (vehicle) =>
         (categories.length === 0 || categories.includes(vehicle.category)) &&
         (fuel.length === 0 || fuel.includes(vehicle.fuelType)),
-    )
+    ),
+    accessibilityFeatures,
+  )
     .sort((a, b) => {
       if (sort === "price-asc") return a.dailyRate - b.dailyRate;
       if (sort === "price-desc") return b.dailyRate - a.dailyRate;
@@ -50,6 +53,16 @@ function SearchResults() {
 
   function toggleFuel(value: string) {
     setFuel((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
+  }
+
+  function toggleAccessibilityFeature(feature: AccessibilityFeature) {
+    setAccessibilityFeatures((current) => current.includes(feature) ? current.filter((item) => item !== feature) : [...current, feature]);
+  }
+
+  function clearFilters() {
+    setCategories([]);
+    setFuel([]);
+    setAccessibilityFeatures([]);
   }
 
   return (
@@ -77,11 +90,17 @@ function SearchResults() {
                 <label key={value}><input type="checkbox" checked={fuel.includes(value)} onChange={() => toggleFuel(value)} /> {value}</label>
               ))}
             </div>
-            <button className="link-button" type="button" onClick={() => { setCategories([]); setFuel([]); }}>Clear all filters</button>
+            <fieldset className="filter-group">
+              <legend>Accessibility features</legend>
+              {(["Hand controls", "Wheelchair-accessible entry"] as AccessibilityFeature[]).map((feature) => (
+                <label key={feature}><input type="checkbox" checked={accessibilityFeatures.includes(feature)} onChange={() => toggleAccessibilityFeature(feature)} /> {feature}</label>
+              ))}
+            </fieldset>
+            <button className="link-button" type="button" onClick={clearFilters}>Clear all filters</button>
           </aside>
           <section aria-live="polite">
             <div className="result-toolbar">
-              <strong>{results.length} matching vehicles</strong>
+              <strong role="status">{results.length} matching vehicles</strong>
               <label>Sort by{" "}
                 <select value={sort} onChange={(event) => setSort(event.target.value)}>
                   <option value="recommended">Recommended</option>
@@ -96,7 +115,7 @@ function SearchResults() {
               <div className="empty-state">
                 <h2>No vehicles match this search</h2>
                 <p>Change the dates, location, driver age, or active filters. The no-results demo scenario may also be enabled.</p>
-                <button className="button button-secondary" type="button" onClick={() => { setCategories([]); setFuel([]); }}>Clear filters</button>
+                <button className="button button-secondary" type="button" onClick={clearFilters}>Clear filters</button>
               </div>
             ) : (
               <div className="vehicle-list">

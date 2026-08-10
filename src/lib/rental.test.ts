@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { findVehicle } from "./fixtures";
+import { findVehicle, vehicles } from "./fixtures";
 import {
   buildQuote,
   defaultSearch,
+  filterVehiclesByAccessibility,
   promotionMessage,
   rentalDays,
   searchVehicles,
@@ -31,6 +32,14 @@ describe("rental search rules", () => {
   it("excludes vehicles above the driver's age eligibility", () => {
     const results = searchVehicles({ ...defaultSearch, driverAge: 21 });
     expect(results.every((vehicle) => vehicle.minimumDriverAge <= 21)).toBe(true);
+  });
+
+  it("returns only vehicles with every selected accessibility feature", () => {
+    const accessibleVehicles = filterVehiclesByAccessibility(vehicles, ["Wheelchair-accessible entry"]);
+
+    expect(accessibleVehicles).not.toHaveLength(0);
+    expect(accessibleVehicles.every((vehicle) => vehicle.accessibilityFeatures.includes("Wheelchair-accessible entry"))).toBe(true);
+    expect(filterVehiclesByAccessibility(accessibleVehicles, ["Hand controls"])).toEqual([]);
   });
 });
 
@@ -87,4 +96,3 @@ describe("rental pricing rules", () => {
     expect(buildQuote(defaultSearch, vehicle, [], "price-change")).toEqual(changed);
   });
 });
-

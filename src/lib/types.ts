@@ -10,6 +10,7 @@ export type VehicleCategory =
 
 export type FuelType = "Petrol" | "Hybrid" | "Electric";
 export type Transmission = "Automatic" | "Manual";
+export type AccessibilityFeature = "Hand controls" | "Wheelchair-accessible entry";
 export type DemoScenario =
   | "normal"
   | "slow"
@@ -39,6 +40,7 @@ export interface Vehicle {
   transmission: Transmission;
   fuelType: FuelType;
   features: string[];
+  accessibilityFeatures: AccessibilityFeature[];
   minimumDriverAge: number;
   dailyRate: number;
   locationIds: string[];
@@ -141,4 +143,3 @@ export interface CheckoutDraft {
   quote?: Quote;
   termsAccepted?: boolean;
 }
-

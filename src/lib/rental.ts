@@ -1,6 +1,7 @@
 import { extras, findExtra, MOCK_CLOCK, vehicles } from "./fixtures";
 import type {
   DemoScenario,
+  AccessibilityFeature,
   Quote,
   QuoteLine,
   SearchCriteria,
@@ -44,6 +45,15 @@ export function searchVehicles(
       vehicle.locationIds.includes(search.pickupLocationId) &&
       search.driverAge >= vehicle.minimumDriverAge,
   );
+}
+
+export function filterVehiclesByAccessibility(
+  vehicles: Vehicle[],
+  features: AccessibilityFeature[],
+): Vehicle[] {
+  return features.length === 0
+    ? vehicles
+    : vehicles.filter((vehicle) => features.every((feature) => vehicle.accessibilityFeatures.includes(feature)));
 }
 
 export function buildQuote(
@@ -122,4 +132,3 @@ export function formatDateTime(value: string): string {
     minute: "2-digit",
   }).format(new Date(value));
 }
-
