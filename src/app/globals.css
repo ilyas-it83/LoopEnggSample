@@ -82,6 +82,15 @@ main { min-height: 65vh; }
 .benefit-section h3 { margin: 14px 0 8px; font-size: 1.25rem; }
 .benefit-section p { color: #d9e7e1; line-height: 1.65; margin: 0; }
 .benefit-icon { color: var(--lime); font-size: 2rem; }
+.architecture-panel { max-width: 1180px; margin: 0 auto; padding: 64px 24px; display: grid; gap: 22px; }
+.architecture-panel h2 { margin: 0 0 10px; font-family: Georgia, serif; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.045em; font-weight: 500; }
+.architecture-panel p:not(.eyebrow) { margin: 0; color: var(--muted); line-height: 1.65; max-width: 720px; }
+.architecture-facts { margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.architecture-facts div { background: white; border: 1px solid var(--line); padding: 18px; }
+.architecture-facts dt { color: var(--muted); font-size: .74rem; text-transform: uppercase; letter-spacing: .055em; font-weight: 900; }
+.architecture-facts dd { margin: 7px 0 0; font-weight: 800; }
+.architecture-actions { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.architecture-actions a { color: var(--green); font-weight: 800; }
 
 .page-hero { background: var(--cream); padding: 55px max(24px, calc((100vw - 1180px) / 2)); }
 .page-hero h1 { font-family: Georgia, serif; font-size: clamp(2.7rem, 5vw, 4.6rem); letter-spacing: -.05em; font-weight: 500; margin: 5px 0 12px; }
@@ -228,7 +237,7 @@ th { background: #f0f4f1; font-size: .75rem; text-transform: uppercase; letter-s
   .hero-search { width: calc(100% - 28px); bottom: 25px; }
   .search-form, .search-form-compact { grid-template-columns: 1fr 1fr; padding: 14px; }
   .search-form .field:first-of-type, .search-form .field:nth-of-type(2), .search-form .search-button { grid-column: 1 / -1; }
-  .location-grid, .benefit-section, .card-grid, .scenario-grid { grid-template-columns: 1fr; }
+  .location-grid, .benefit-section, .card-grid, .scenario-grid, .architecture-facts { grid-template-columns: 1fr; }
   .section { padding: 55px 18px; }
   .section-heading { align-items: start; flex-direction: column; }
   .vehicle-card { grid-template-columns: 1fr; }

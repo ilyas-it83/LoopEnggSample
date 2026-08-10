@@ -105,18 +105,62 @@ test("guest retrieves the seeded booking", async ({ page }) => {
   await expect(page.getByText("Rental itinerary")).toBeVisible();
 });
 
-test("DW-150 TDD-01: customer cancels an eligible booking once", async ({ page }) => {
+test("customer modifies eligible rental date-times without duplicate submission", async ({ page }) => {
   await page.goto("/manage-booking");
   await page.getByRole("button", { name: "Find booking" }).click();
-  page.once("dialog", (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "Cancel booking" }).click();
+  await page.getByRole("button", { name: "Modify rental date-times" }).click();
+  await page.getByLabel("Return date and time").fill("2026-08-25T09:00");
+  await expect(page.getByText(/Original total:/)).toBeVisible();
+  await page.getByRole("button", { name: "Confirm date-time changes" }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Rental date-times updated" }),
+  ).toBeVisible();
+  await expect(page.getByText(/Aug 25, 2026.*9:00.*AM/)).toBeVisible();
+  await expect(page.getByText("Rental date-times were updated.")).toHaveCount(1);
+  await page.getByRole("button", { name: "Modify rental date-times" }).click();
+  await page.getByRole("button", { name: "Confirm date-time changes" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Choose a different pickup or return date-time" }),
+  ).toBeVisible();
+  await expect(page.getByText("Rental date-times were updated.")).toHaveCount(1);
+});
 
-  await expect(page.getByRole("status")).toContainText(
-    "Booking cancelled. Mock refund estimate:",
-  );
-  await expect(page.locator(".status")).toHaveText("Cancelled");
+test("customer is shown an accessible validation message for invalid rental date-times", async ({ page }) => {
+  await page.goto("/manage-booking");
+  await page.getByRole("button", { name: "Find booking" }).click();
+  await page.getByRole("button", { name: "Modify rental date-times" }).click();
+  await page.getByLabel("Return date and time").fill("2026-08-20T09:00");
+  await page.getByRole("button", { name: "Confirm date-time changes" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Return must be later than pickup." }),
+  ).toBeVisible();
+  await expect(page.getByText(/Aug 23, 2026.*9:00.*AM/)).toBeVisible();
+});
+
+test("date-time modification rechecks vehicle availability", async ({ page }) => {
+  await page.goto("/demo-controls");
+  await page.getByRole("button", { name: /Vehicle unavailable/ }).click();
+  await page.goto("/manage-booking");
+  await page.getByRole("button", { name: "Find booking" }).click();
+  await page.getByRole("button", { name: "Modify rental date-times" }).click();
+  await page.getByLabel("Return date and time").fill("2026-08-25T09:00");
+  await page.getByRole("button", { name: "Confirm date-time changes" }).click();
+
+  await expect(
+    page.getByRole("alert").filter({ hasText: "became unavailable" }),
+  ).toBeVisible();
+  await expect(page.getByText(/Aug 23, 2026.*9:00.*AM/)).toBeVisible();
+});
+
+test("DW-150 TDD-01: customer cancels a confirmed booking once", async ({ page }) => {
+  await page.goto("/manage-booking");
+  await page.getByRole("button", { name: "Find booking" }).click();
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Cancel booking" }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Booking cancelled" }),
+  ).toBeVisible();
   await expect(page.getByRole("button", { name: "Cancel booking" })).toBeDisabled();
-  await expect(page.getByText(/cannot be modified or cancelled again/)).toBeVisible();
 });
 
 test("no-results scenario provides recovery guidance", async ({ page }) => {
