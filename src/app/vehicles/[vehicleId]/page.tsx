@@ -6,7 +6,7 @@ import { Suspense, useEffect, useState } from "react";
 import { PriceBreakdown } from "@/components/PriceBreakdown";
 import { findLocation, findVehicle } from "@/lib/fixtures";
 import { buildQuote, defaultSearch, formatMoney } from "@/lib/rental";
-import { getScenario, saveCheckout } from "@/lib/storage";
+import { getScenario, recordRecentlyViewed, saveCheckout } from "@/lib/storage";
 import type { DemoScenario, SearchCriteria } from "@/lib/types";
 
 function VehicleDetails() {
@@ -17,6 +17,9 @@ function VehicleDetails() {
   useEffect(() => setScenario(getScenario()), []);
 
   const vehicle = findVehicle(params.vehicleId);
+  useEffect(() => {
+    if (vehicle) recordRecentlyViewed(vehicle.id);
+  }, [vehicle]);
   const search: SearchCriteria = {
     pickupLocationId: query.get("pickupLocationId") || defaultSearch.pickupLocationId,
     returnLocationId: query.get("returnLocationId") || defaultSearch.returnLocationId,
@@ -26,6 +29,10 @@ function VehicleDetails() {
     promoCode: query.get("promoCode") || undefined,
   };
   if (!vehicle) return <div className="content-wrap"><div className="empty-state"><h1>Vehicle not found</h1><Link className="button button-primary" href="/search">Return to search</Link></div></div>;
+  const hasRentalCriteria = ["pickupLocationId", "returnLocationId", "pickupAt", "returnAt", "driverAge"].every((key) => query.has(key));
+  if (!hasRentalCriteria) {
+    return <div className="content-wrap"><div className="empty-state"><h1>Start a rental search</h1><p>Choose pickup and return details before viewing a vehicle estimate.</p><Link className="button button-primary" href="/search">Enter rental details</Link></div></div>;
+  }
 
   const quote = buildQuote(search, vehicle, [], scenario);
   const unavailable = scenario === "vehicle-unavailable";
@@ -80,4 +87,3 @@ function VehicleDetails() {
 export default function VehiclePage() {
   return <Suspense fallback={<div className="content-wrap">Loading vehicle…</div>}><VehicleDetails /></Suspense>;
 }
-

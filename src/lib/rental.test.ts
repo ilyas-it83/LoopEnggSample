@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { findVehicle } from "./fixtures";
+import { buildComparison } from "./comparison";
 import {
   buildQuote,
   defaultSearch,
@@ -45,6 +46,44 @@ describe("rental pricing rules", () => {
     expect(Number.isInteger(quote.total)).toBe(true);
   });
 
+  describe("vehicle comparison rules", () => {
+    it("builds an aligned, deterministic matrix and identifies the lowest estimate", () => {
+      const comparison = buildComparison(defaultSearch, [
+        findVehicle("compact-1")!,
+        findVehicle("midsize-1")!,
+      ]);
+
+      expect(comparison.rows.map((row) => row.label)).toEqual([
+        "Category",
+        "Estimated total",
+        "Passengers",
+        "Luggage",
+        "Doors",
+        "Transmission",
+        "Fuel or power",
+        "Minimum driver age",
+        "Included features",
+      ]);
+      expect(comparison.lowestEstimateVehicleId).toBe("compact-1");
+      expect(comparison.rows.every((row) => row.values.length === 2)).toBe(true);
+      expect(buildComparison(defaultSearch, [
+        findVehicle("compact-1")!,
+        findVehicle("midsize-1")!,
+      ])).toEqual(comparison);
+    });
+
+    it("rejects fewer than two or more than three selected vehicles", () => {
+      expect(() => buildComparison(defaultSearch, [findVehicle("compact-1")!]))
+        .toThrow("Select between two and three vehicles to compare.");
+      expect(() => buildComparison(defaultSearch, [
+        findVehicle("compact-1")!,
+        findVehicle("midsize-1")!,
+        findVehicle("suv-1")!,
+        findVehicle("van-1")!,
+      ])).toThrow("Select between two and three vehicles to compare.");
+    });
+  });
+
   it("adds one-way and young-driver fees", () => {
     const quote = buildQuote({
       ...defaultSearch,
@@ -87,4 +126,3 @@ describe("rental pricing rules", () => {
     expect(buildQuote(defaultSearch, vehicle, [], "price-change")).toEqual(changed);
   });
 });
-

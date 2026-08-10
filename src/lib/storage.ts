@@ -14,7 +14,9 @@ import type {
 const KEYS = {
   checkout: "drivewise.checkout",
   bookings: "drivewise.bookings",
+  comparison: "drivewise.comparison",
   favorites: "drivewise.favorites",
+  recentlyViewed: "drivewise.recently-viewed",
   scenario: "drivewise.scenario",
 };
 
@@ -184,6 +186,29 @@ export function toggleFavorite(vehicleId: string): string[] {
   return next;
 }
 
+export function getComparison(): string[] {
+  return read<string[]>(KEYS.comparison, []);
+}
+
+export function toggleComparison(vehicleId: string): string[] {
+  const selected = getComparison();
+  if (selected.includes(vehicleId)) {
+    const next = selected.filter((id) => id !== vehicleId);
+    write(KEYS.comparison, next);
+    return next;
+  }
+  if (selected.length >= 3) return selected;
+  const next = [...selected, vehicleId];
+  write(KEYS.comparison, next);
+  return next;
+}
+
+export function recordRecentlyViewed(vehicleId: string): string[] {
+  const next = [vehicleId, ...read<string[]>(KEYS.recentlyViewed, []).filter((id) => id !== vehicleId)].slice(0, 6);
+  write(KEYS.recentlyViewed, next);
+  return next;
+}
+
 export function getScenario(): DemoScenario {
   return read<DemoScenario>(KEYS.scenario, "normal");
 }
@@ -196,4 +221,3 @@ export function resetDemo(): void {
   Object.values(KEYS).forEach((key) => window.localStorage.removeItem(key));
   window.dispatchEvent(new Event("drivewise-storage"));
 }
-

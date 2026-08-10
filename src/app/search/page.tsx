@@ -1,11 +1,12 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { SearchForm } from "@/components/SearchForm";
 import { VehicleCard } from "@/components/VehicleCard";
 import { buildQuote, defaultSearch, searchVehicles } from "@/lib/rental";
-import { getScenario } from "@/lib/storage";
+import { getComparison, getScenario } from "@/lib/storage";
 import type { DemoScenario, SearchCriteria, VehicleCategory } from "@/lib/types";
 
 function SearchResults() {
@@ -22,9 +23,13 @@ function SearchResults() {
   const [categories, setCategories] = useState<VehicleCategory[]>([]);
   const [fuel, setFuel] = useState<string[]>([]);
   const [sort, setSort] = useState("recommended");
+  const [comparisonIds, setComparisonIds] = useState<string[]>([]);
 
   useEffect(() => {
-    const update = () => setCurrentScenario(getScenario());
+    const update = () => {
+      setCurrentScenario(getScenario());
+      setComparisonIds(getComparison());
+    };
     update();
     window.addEventListener("drivewise-storage", update);
     return () => window.removeEventListener("drivewise-storage", update);
@@ -51,6 +56,16 @@ function SearchResults() {
   function toggleFuel(value: string) {
     setFuel((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
   }
+
+  const comparisonQuery = new URLSearchParams({
+    ids: comparisonIds.join(","),
+    pickupLocationId: search.pickupLocationId,
+    returnLocationId: search.returnLocationId,
+    pickupAt: search.pickupAt,
+    returnAt: search.returnAt,
+    driverAge: String(search.driverAge),
+    ...(search.promoCode ? { promoCode: search.promoCode } : {}),
+  });
 
   return (
     <>
@@ -92,6 +107,14 @@ function SearchResults() {
                 </select>
               </label>
             </div>
+            {comparisonIds.length > 0 && (
+              <div className="alert alert-info" aria-live="polite" style={{ marginBottom: 18 }}>
+                {comparisonIds.length} of 3 vehicles selected for comparison.{" "}
+                {comparisonIds.length >= 2
+                  ? <Link href={`/compare?${comparisonQuery.toString()}`}>Compare selected vehicles</Link>
+                  : "Select one more vehicle to build the comparison matrix."}
+              </div>
+            )}
             {results.length === 0 ? (
               <div className="empty-state">
                 <h2>No vehicles match this search</h2>
