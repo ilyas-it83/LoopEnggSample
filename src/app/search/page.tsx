@@ -86,7 +86,7 @@ function SearchResults() {
             <div className="filter-group">
               <strong>Transmission</strong>
               {(["Automatic", "Manual"] as Transmission[]).map((value) => (
-                <label key={value}><input type="checkbox" checked={transmissions.includes(value)} onChange={() => toggleTransmission(value)} /> {value}</label>
+                <label key={value} htmlFor={`transmission-${value.toLowerCase()}`}><input id={`transmission-${value.toLowerCase()}`} type="checkbox" checked={transmissions.includes(value)} onChange={() => toggleTransmission(value)} /> {value}</label>
               ))}
             </div>
             <button className="link-button" type="button" onClick={clearFilters}>Clear all filters</button>

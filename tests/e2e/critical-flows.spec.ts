@@ -61,8 +61,12 @@ test("customer filters available vehicles by transmission type", async ({ page }
   await page.getByRole("checkbox", { name: "Manual" }).check();
 
   await expect(page.getByText(/matching vehicles/)).toBeVisible();
-  await expect(page.locator(".vehicle-card")).toContainText("Manual");
-  await expect(page.locator(".vehicle-card")).not.toContainText("Automatic");
+  const cards = page.locator(".vehicle-card");
+  await expect(cards).toHaveCount(2);
+  for (const card of await cards.all()) {
+    await expect(card).toContainText("Manual");
+    await expect(card).not.toContainText("Automatic");
+  }
 });
 
 test("unavailable transmission filter combination offers recovery", async ({ page }) => {
