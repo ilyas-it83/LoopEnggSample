@@ -1,6 +1,7 @@
 "use client";
 
 import { buildQuote, defaultSearch, validateSelectedExtras } from "./rental";
+import { MAX_COMPARISON_VEHICLES } from "./comparison";
 import { findVehicle, simulatedProfile } from "./fixtures";
 import type {
   Booking,
@@ -13,6 +14,7 @@ import type {
 const KEYS = {
   checkout: "drivewise.checkout",
   bookings: "drivewise.bookings",
+  comparison: "drivewise.comparison",
   favorites: "drivewise.favorites",
   recentlyViewed: "drivewise.recently-viewed",
   scenario: "drivewise.scenario",
@@ -171,6 +173,28 @@ export function toggleFavorite(vehicleId: string): string[] {
     ? favorites.filter((id) => id !== vehicleId)
     : [...favorites, vehicleId];
   write(KEYS.favorites, next);
+  return next;
+}
+
+export function getComparison(): string[] {
+  const stored = read<unknown>(KEYS.comparison, []);
+  if (!Array.isArray(stored)) return [];
+  return [...new Set(stored.filter(
+    (id): id is string => typeof id === "string" && Boolean(findVehicle(id)),
+  ))].slice(0, MAX_COMPARISON_VEHICLES);
+}
+
+export function toggleComparison(vehicleId: string): string[] {
+  if (!findVehicle(vehicleId)) return getComparison();
+  const selected = getComparison();
+  if (selected.includes(vehicleId)) {
+    const next = selected.filter((id) => id !== vehicleId);
+    write(KEYS.comparison, next);
+    return next;
+  }
+  if (selected.length >= MAX_COMPARISON_VEHICLES) return selected;
+  const next = [...selected, vehicleId];
+  write(KEYS.comparison, next);
   return next;
 }
 

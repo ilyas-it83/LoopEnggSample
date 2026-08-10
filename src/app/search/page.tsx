@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchForm } from "@/components/SearchForm";
 import { VehicleCard } from "@/components/VehicleCard";
+import { MAX_COMPARISON_VEHICLES } from "@/lib/comparison";
 import {
   buildQuote,
   defaultSearch,
@@ -14,7 +16,7 @@ import {
   searchVehicles,
   validateEstimatedPriceRange,
 } from "@/lib/rental";
-import { getScenario } from "@/lib/storage";
+import { getComparison, getScenario } from "@/lib/storage";
 import { ACCESSIBILITY_FEATURES } from "@/lib/types";
 import type {
   AccessibilityFeature,
@@ -47,9 +49,13 @@ function SearchResults() {
   const [maximumPrice, setMaximumPrice] = useState("");
   const [priceRange, setPriceRange] = useState<EstimatedPriceRange>({});
   const [priceRangeError, setPriceRangeError] = useState("");
+  const [comparisonIds, setComparisonIds] = useState<string[]>([]);
 
   useEffect(() => {
-    const update = () => setCurrentScenario(getScenario());
+    const update = () => {
+      setCurrentScenario(getScenario());
+      setComparisonIds(getComparison());
+    };
     update();
     window.addEventListener("drivewise-storage", update);
     return () => window.removeEventListener("drivewise-storage", update);
@@ -72,6 +78,15 @@ function SearchResults() {
       if (sort === "name") return a.example.localeCompare(b.example);
       return b.inventory - a.inventory;
     });
+  const comparisonQuery = new URLSearchParams({
+    ids: comparisonIds.join(","),
+    pickupLocationId: search.pickupLocationId,
+    returnLocationId: search.returnLocationId,
+    pickupAt: search.pickupAt,
+    returnAt: search.returnAt,
+    driverAge: String(search.driverAge),
+    ...(search.promoCode ? { promoCode: search.promoCode } : {}),
+  });
 
   function toggleCategory(category: VehicleCategory) {
     setCategories((current) => current.includes(category) ? current.filter((item) => item !== category) : [...current, category]);
@@ -201,6 +216,14 @@ function SearchResults() {
                     <option value="name">Vehicle name</option>
                   </select>
                 </label>
+              </div>
+            )}
+            {comparisonIds.length > 0 && scenario !== "service-error" && (
+              <div className="alert alert-info" aria-live="polite" style={{ marginBottom: 18 }}>
+                {comparisonIds.length} of {MAX_COMPARISON_VEHICLES} vehicles selected for comparison.{" "}
+                {comparisonIds.length >= 2
+                  ? <Link href={`/compare?${comparisonQuery.toString()}`}>Compare selected vehicles</Link>
+                  : "Select one more vehicle to build the comparison matrix."}
               </div>
             )}
             {scenario === "service-error" ? (

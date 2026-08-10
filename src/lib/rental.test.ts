@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { extras, findVehicle, vehicles } from "./fixtures";
+import { buildComparison } from "./comparison";
 import {
   buildQuote,
   defaultSearch,
@@ -167,6 +168,51 @@ describe("rental pricing rules", () => {
 
     it.each(validationCases)("validates selected extras %#", (selectedExtras, errors) => {
       expect(validateSelectedExtras(selectedExtras)).toEqual(errors);
+    });
+
+    describe("vehicle comparison rules", () => {
+      const selectedVehicles = [
+        findVehicle("compact-1")!,
+        findVehicle("midsize-1")!,
+      ];
+
+      it("builds an aligned deterministic matrix and identifies the lowest estimate", () => {
+        const comparison = buildComparison(defaultSearch, selectedVehicles);
+
+        expect(comparison.rows.map((row) => row.label)).toEqual([
+          "Category",
+          "Estimated total",
+          "Passengers",
+          "Luggage",
+          "Doors",
+          "Transmission",
+          "Fuel or power",
+          "Minimum driver age",
+          "Included features",
+        ]);
+        expect(comparison.lowestEstimateVehicleId).toBe("compact-1");
+        expect(comparison.rows.every((row) => row.values.length === 2)).toBe(true);
+        expect(buildComparison(defaultSearch, selectedVehicles)).toEqual(comparison);
+      });
+
+      it("uses the active pricing scenario", () => {
+        const normal = buildComparison(defaultSearch, selectedVehicles);
+        const changed = buildComparison(defaultSearch, selectedVehicles, "price-change");
+
+        expect(changed.rows.find((row) => row.label === "Estimated total")?.values)
+          .not.toEqual(normal.rows.find((row) => row.label === "Estimated total")?.values);
+      });
+
+      it("rejects fewer than two or more than three selected vehicles", () => {
+        expect(() => buildComparison(defaultSearch, [findVehicle("compact-1")!]))
+          .toThrow("Select between two and three vehicles to compare.");
+        expect(() => buildComparison(defaultSearch, [
+          findVehicle("compact-1")!,
+          findVehicle("midsize-1")!,
+          findVehicle("suv-1")!,
+          findVehicle("van-1")!,
+        ])).toThrow("Select between two and three vehicles to compare.");
+      });
     });
 
     it("excludes invalid extra selections from the quote", () => {

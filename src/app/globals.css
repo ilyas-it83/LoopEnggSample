@@ -140,6 +140,7 @@ main { min-height: 65vh; }
 .price-total { align-items: center; padding-top: 18px; }
 .price-total strong { font-size: 1.8rem; }
 .fine-print { color: var(--muted); font-size: .76rem; line-height: 1.5; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .price-panel .button { width: 100%; margin-top: 12px; }
 
 .checkout-progress { max-width: 720px; margin: 0 auto 34px; list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); padding: 0; }

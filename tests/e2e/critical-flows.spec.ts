@@ -94,6 +94,38 @@ test("no-results scenario provides recovery guidance", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
 });
 
+test("customer compares selected vehicles and direct links require valid rental criteria", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByRole("button", { name: "Add to comparison" }).nth(0).click();
+  await page.getByRole("button", { name: "Add to comparison" }).nth(1).click();
+  await page.getByRole("link", { name: "Compare selected vehicles" }).click();
+  await expect(page.getByRole("heading", { name: "Vehicle comparison" })).toBeVisible();
+  await expect(page.getByRole("table", { name: "Vehicle comparison matrix" })).toBeVisible();
+  await expect(page.getByText("Lowest estimate", { exact: true })).toBeVisible();
+
+  await page.goto("/vehicles/compact-1");
+  await expect(page.getByRole("heading", { name: "Start a rental search" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Enter rental details" })).toBeVisible();
+});
+
+test("comparison selection is limited and favorites persist after a refresh", async ({ page }) => {
+  await page.goto("/search");
+  const comparisonButtons = page.getByRole("button", { name: "Add to comparison" });
+  await comparisonButtons.nth(0).click();
+  await comparisonButtons.nth(1).click();
+  await comparisonButtons.nth(2).click();
+  await comparisonButtons.nth(3).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "up to three vehicles" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: /Add .* to favorites/ }).first().click();
+  await page.goto("/favorites");
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Your favorites" })).toBeVisible();
+  await expect(page.getByRole("article")).toBeVisible();
+});
+
 test("customer filters results by an accessibility-related feature", async ({ page }) => {
   await page.goto("/search");
   await page.getByLabel("Wheelchair-accessible entry").check();
