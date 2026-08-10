@@ -108,6 +108,47 @@ test("customer compares selected vehicles and direct links require valid rental 
   await expect(page.getByRole("link", { name: "Enter rental details" })).toBeVisible();
 });
 
+test("customer modifies the vehicle on an eligible booking", async ({ page }) => {
+  await page.goto("/manage-booking");
+  await page.getByRole("button", { name: "Find booking" }).click();
+  await page.getByRole("button", { name: "Modify vehicle" }).click();
+
+  const vehicleGroup = page.getByRole("group", { name: "Available vehicles" });
+  const alternative = vehicleGroup.locator(
+    'input[name="vehicle-selection"]:not(:checked):not([disabled])',
+  ).first();
+  const alternativeLabel = alternative.locator("xpath=ancestor::label");
+  const alternativeName = await alternativeLabel.locator("strong").innerText();
+  await alternative.check();
+  await page.getByRole("button", { name: "Save vehicle change" }).click();
+
+  await expect(
+    page.getByRole("status").filter({ hasText: `Vehicle updated to ${alternativeName}` }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: alternativeName })).toBeVisible();
+});
+
+test("vehicle modification blocks no-op and unavailable selections", async ({ page }) => {
+  await page.goto("/manage-booking");
+  await page.getByRole("button", { name: "Find booking" }).click();
+  await page.getByRole("button", { name: "Modify vehicle" }).click();
+  await expect(page.getByRole("button", { name: "Save vehicle change" })).toBeDisabled();
+
+  await page.goto("/demo-controls");
+  await page.getByRole("button", { name: /Vehicle unavailable/ }).click();
+  await page.goto("/manage-booking");
+  await page.getByRole("button", { name: "Find booking" }).click();
+  await page.getByRole("button", { name: "Modify vehicle" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Vehicle changes are unavailable" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "Available vehicles" })
+      .locator('input[name="vehicle-selection"]')
+      .nth(1),
+  ).toBeDisabled();
+});
+
 test("comparison selection is limited and favorites persist after a refresh", async ({ page }) => {
   await page.goto("/search");
   const comparisonButtons = page.getByRole("button", { name: "Add to comparison" });

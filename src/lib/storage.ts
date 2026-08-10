@@ -1,6 +1,11 @@
 "use client";
 
-import { buildQuote, defaultSearch, validateSelectedExtras } from "./rental";
+import {
+  buildQuote,
+  defaultSearch,
+  validateSelectedExtras,
+  vehicleAvailability,
+} from "./rental";
 import { MAX_COMPARISON_VEHICLES } from "./comparison";
 import { findVehicle, simulatedProfile } from "./fixtures";
 import type {
@@ -127,7 +132,11 @@ export function createBooking(draft: CheckoutDraft): Booking {
   return booking;
 }
 
-export function updateBookingExtras(booking: Booking, selectedExtras: SelectedExtra[]): Booking {
+export function updateBookingExtras(
+  booking: Booking,
+  selectedExtras: SelectedExtra[],
+  scenario: DemoScenario = "normal",
+): Booking {
   const extraErrors = validateSelectedExtras(selectedExtras);
   if (extraErrors.length > 0) throw new Error(extraErrors[0]);
 
@@ -136,11 +145,45 @@ export function updateBookingExtras(booking: Booking, selectedExtras: SelectedEx
   const updated: Booking = {
     ...booking,
     extras: selectedExtras,
-    quote: buildQuote(booking.search, vehicle, selectedExtras),
+    quote: buildQuote(booking.search, vehicle, selectedExtras, scenario),
     updatedAt: now,
     history: [
       ...booking.history,
       { id: `history-${Date.now()}`, action: "Modified", at: now, detail: "Optional extras were updated." },
+    ],
+  };
+  saveBooking(updated);
+  return updated;
+}
+
+export function updateBookingVehicle(
+  booking: Booking,
+  vehicleId: string,
+  scenario: DemoScenario = "normal",
+): Booking {
+  if (booking.status !== "Confirmed") {
+    throw new Error("Only confirmed bookings can have their vehicle changed.");
+  }
+  if (vehicleId === booking.vehicleId) {
+    throw new Error("Choose a different vehicle before saving.");
+  }
+  const vehicle = findVehicle(vehicleId);
+  if (!vehicle) {
+    throw new Error("Selected vehicle could not be found.");
+  }
+  const availability = vehicleAvailability(vehicle, booking.search, scenario);
+  if (!availability.available) {
+    throw new Error(availability.reason || "This vehicle is not available for this booking.");
+  }
+  const now = new Date().toISOString();
+  const updated: Booking = {
+    ...booking,
+    vehicleId,
+    quote: buildQuote(booking.search, vehicle, booking.extras, scenario),
+    updatedAt: now,
+    history: [
+      ...booking.history,
+      { id: `history-${Date.now()}`, action: "Vehicle changed", at: now, detail: `Vehicle updated to ${vehicle.example}.` },
     ],
   };
   saveBooking(updated);

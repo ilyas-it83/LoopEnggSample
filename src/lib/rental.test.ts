@@ -15,6 +15,7 @@ import {
   validateSelectedExtras,
   validateEstimatedPriceRange,
   validateSearch,
+  vehicleAvailability,
 } from "./rental";
 import type { SelectedExtra } from "./types";
 
@@ -138,6 +139,31 @@ describe("rental search rules", () => {
 
 
 describe("rental pricing rules", () => {
+  describe("vehicle availability for modification", () => {
+    it("is available when inventory, location, and driver age are eligible", () => {
+      expect(vehicleAvailability(findVehicle("compact-1")!, defaultSearch)).toEqual({ available: true });
+    });
+
+    it("is unavailable under the vehicle-unavailable scenario", () => {
+      const result = vehicleAvailability(
+        findVehicle("compact-1")!,
+        defaultSearch,
+        "vehicle-unavailable",
+      );
+      expect(result.available).toBe(false);
+      expect(result.reason).toMatch(/unavailable/i);
+    });
+
+    it("explains pickup-location and driver-age ineligibility", () => {
+      expect(vehicleAvailability(findVehicle("economy-1")!, defaultSearch).reason)
+        .toMatch(/pickup location/i);
+      expect(vehicleAvailability(
+        findVehicle("suv-1")!,
+        { ...defaultSearch, driverAge: 22 },
+      ).reason).toMatch(/must be at least/i);
+    });
+  });
+
   const vehicle = findVehicle("compact-1")!;
 
   it("calculates base price and tax using integer minor units", () => {

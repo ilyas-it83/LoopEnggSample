@@ -43,12 +43,27 @@ export function searchVehicles(
   scenario: DemoScenario = "normal",
 ): Vehicle[] {
   if (scenario === "no-results" || scenario === "service-error" || validateSearch(search).length > 0) return [];
-  return vehicles.filter(
-    (vehicle) =>
-      vehicle.inventory > 0 &&
-      vehicle.locationIds.includes(search.pickupLocationId) &&
-      search.driverAge >= vehicle.minimumDriverAge,
-  );
+  return vehicles.filter((vehicle) => vehicleAvailability(vehicle, search).available);
+}
+
+export function vehicleAvailability(
+  vehicle: Vehicle,
+  search: SearchCriteria,
+  scenario: DemoScenario = "normal",
+): { available: boolean; reason?: string } {
+  if (scenario === "vehicle-unavailable") {
+    return { available: false, reason: "This vehicle became unavailable under the active demo scenario." };
+  }
+  if (vehicle.inventory <= 0) {
+    return { available: false, reason: "This vehicle has no remaining mock inventory." };
+  }
+  if (!vehicle.locationIds.includes(search.pickupLocationId)) {
+    return { available: false, reason: "This vehicle is not available at the selected pickup location." };
+  }
+  if (search.driverAge < vehicle.minimumDriverAge) {
+    return { available: false, reason: `Driver must be at least ${vehicle.minimumDriverAge} to rent this vehicle.` };
+  }
+  return { available: true };
 }
 
 export function extraQuantityLimit(extraId: string): number {
