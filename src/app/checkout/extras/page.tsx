@@ -77,14 +77,16 @@ export default function ExtrasPage() {
                     <span><strong>{extra.name}</strong><p>{extra.description}</p></span>
                   </label>
                   <span>{formatMoney(extra.price)}<small> / {extra.pricingModel === "per-day" ? "day" : "rental"}</small></span>
-                  {unavailable ? <span className="extra-availability">Unavailable</span> : quantity > 0 && (
-                    <span className="quantity-controls" aria-label={`${extra.name} quantity`}>
+                  {unavailable ? <span className="extra-availability">Unavailable</span> : quantity > 0 ? (
+                    <span className="quantity-controls">
                       <button type="button" onClick={() => setQuantity(extra.id, quantity - 1)} aria-label={`Decrease ${extra.name} quantity`}>−</button>
                       <output aria-label={`${extra.name} quantity`}>{quantity}</output>
                       <button type="button" onClick={() => setQuantity(extra.id, quantity + 1)} disabled={quantity >= limit} aria-label={`Increase ${extra.name} quantity`}>+</button>
+                      <small>{limit} available</small>
                     </span>
+                  ) : (
+                    <small className="extra-availability">{limit} available</small>
                   )}
-                  {!unavailable && <small className="extra-availability">{limit} available</small>}
                 </div>
               );
             })}

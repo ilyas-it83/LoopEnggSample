@@ -64,10 +64,10 @@ function extraSelectionErrors(selectedExtras: SelectedExtra[]): Map<string, stri
       errors.set(extraId, "This extra is not available.");
     } else if (!Number.isInteger(quantity) || quantity < 1) {
       errors.set(extraId, `Select at least one ${extra.name}.`);
-    } else if (quantity > extra.maxQuantity) {
-      errors.set(extraId, `${extra.name} has a limit of ${extra.maxQuantity} per rental.`);
     } else if (extra.availableQuantity === 0) {
       errors.set(extraId, `${extra.name} is unavailable for this rental.`);
+    } else if (quantity > extra.maxQuantity) {
+      errors.set(extraId, `${extra.name} has a limit of ${extra.maxQuantity} per rental.`);
     } else if (quantity > extra.availableQuantity) {
       errors.set(extraId, `Only ${extra.availableQuantity} ${extra.name}s are available for this rental.`);
     }
