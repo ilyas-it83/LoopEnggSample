@@ -62,6 +62,7 @@ export interface Extra {
   pricingModel: "per-day" | "per-rental";
   price: number;
   maxQuantity: number;
+  availableQuantity: number;
 }
 
 export interface SelectedExtra {
@@ -141,4 +142,3 @@ export interface CheckoutDraft {
   quote?: Quote;
   termsAccepted?: boolean;
 }
-

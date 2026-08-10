@@ -46,6 +46,48 @@ export function searchVehicles(
   );
 }
 
+export function extraQuantityLimit(extraId: string): number {
+  const extra = findExtra(extraId);
+  return extra ? Math.min(extra.maxQuantity, extra.availableQuantity) : 0;
+}
+
+function extraSelectionErrors(selectedExtras: SelectedExtra[]): Map<string, string> {
+  const quantities = new Map<string, number>();
+  selectedExtras.forEach((selection) => {
+    quantities.set(selection.id, (quantities.get(selection.id) ?? 0) + selection.quantity);
+  });
+
+  const errors = new Map<string, string>();
+  quantities.forEach((quantity, extraId) => {
+    const extra = findExtra(extraId);
+    if (!extra) {
+      errors.set(extraId, "This extra is not available.");
+    } else if (!Number.isInteger(quantity) || quantity < 1) {
+      errors.set(extraId, `Select at least one ${extra.name}.`);
+    } else if (quantity > extra.maxQuantity) {
+      errors.set(extraId, `${extra.name} has a limit of ${extra.maxQuantity} per rental.`);
+    } else if (extra.availableQuantity === 0) {
+      errors.set(extraId, `${extra.name} is unavailable for this rental.`);
+    } else if (quantity > extra.availableQuantity) {
+      errors.set(extraId, `Only ${extra.availableQuantity} ${extra.name}s are available for this rental.`);
+    }
+  });
+  return errors;
+}
+
+export function validateSelectedExtras(selectedExtras: SelectedExtra[]): string[] {
+  return [...extraSelectionErrors(selectedExtras).values()];
+}
+
+function validSelectedExtras(selectedExtras: SelectedExtra[]): SelectedExtra[] {
+  const errors = extraSelectionErrors(selectedExtras);
+  const quantities = new Map<string, number>();
+  selectedExtras.forEach((selection) => {
+    if (!errors.has(selection.id)) quantities.set(selection.id, (quantities.get(selection.id) ?? 0) + selection.quantity);
+  });
+  return [...quantities].map(([id, quantity]) => ({ id, quantity }));
+}
+
 export function buildQuote(
   search: SearchCriteria,
   vehicle: Vehicle,
@@ -64,7 +106,7 @@ export function buildQuote(
     lines.push({ id: "young-driver", label: `Young driver fee · ${days} days`, amount: 2500 * days, kind: "charge" });
   }
 
-  selectedExtras.forEach((selection) => {
+  validSelectedExtras(selectedExtras).forEach((selection) => {
     const extra = findExtra(selection.id);
     if (!extra || selection.quantity < 1) return;
     const multiplier = extra.pricingModel === "per-day" ? days : 1;
@@ -122,4 +164,3 @@ export function formatDateTime(value: string): string {
     minute: "2-digit",
   }).format(new Date(value));
 }
-
