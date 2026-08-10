@@ -1,5 +1,5 @@
 import { buildQuote, formatMoney } from "./rental";
-import type { SearchCriteria, Vehicle } from "./types";
+import type { DemoScenario, SearchCriteria, Vehicle } from "./types";
 
 export const MAX_COMPARISON_VEHICLES = 3;
 
@@ -13,12 +13,16 @@ export interface VehicleComparison {
   lowestEstimateVehicleId: string;
 }
 
-export function buildComparison(search: SearchCriteria, selectedVehicles: Vehicle[]): VehicleComparison {
+export function buildComparison(
+  search: SearchCriteria,
+  selectedVehicles: Vehicle[],
+  scenario: DemoScenario = "normal",
+): VehicleComparison {
   if (selectedVehicles.length < 2 || selectedVehicles.length > MAX_COMPARISON_VEHICLES) {
     throw new Error("Select between two and three vehicles to compare.");
   }
 
-  const estimates = selectedVehicles.map((vehicle) => buildQuote(search, vehicle).total);
+  const estimates = selectedVehicles.map((vehicle) => buildQuote(search, vehicle, [], scenario).total);
   const lowestEstimate = Math.min(...estimates);
   return {
     lowestEstimateVehicleId: selectedVehicles[estimates.indexOf(lowestEstimate)].id,

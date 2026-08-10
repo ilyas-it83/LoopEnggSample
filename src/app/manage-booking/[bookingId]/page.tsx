@@ -5,7 +5,12 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PriceBreakdown } from "@/components/PriceBreakdown";
 import { extras, findLocation, findVehicle } from "@/lib/fixtures";
-import { formatDateTime, formatMoney } from "@/lib/rental";
+import {
+  extraQuantityLimit,
+  formatDateTime,
+  formatMoney,
+  validateSelectedExtras,
+} from "@/lib/rental";
 import { cancelBooking, findBooking, updateBookingExtras } from "@/lib/storage";
 import type { Booking, SelectedExtra } from "@/lib/types";
 
@@ -15,6 +20,7 @@ export default function ManageBookingPage() {
   const [editingExtras, setEditingExtras] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const found = findBooking(params.bookingId);
@@ -27,14 +33,35 @@ export default function ManageBookingPage() {
   const vehicle = findVehicle(booking.vehicleId)!;
   const canChange = booking.status === "Confirmed";
 
-  function toggle(extraId: string) {
-    setSelectedExtras((current) => current.some((item) => item.id === extraId) ? current.filter((item) => item.id !== extraId) : [...current, { id: extraId, quantity: 1 }]);
+  function setQuantity(extraId: string, quantity: number) {
+    const extra = extras.find((item) => item.id === extraId)!;
+    const limit = extraQuantityLimit(extraId);
+    if (quantity > limit) {
+      setError(limit === 0
+        ? `${extra.name} is unavailable for this rental.`
+        : `Only ${limit} ${extra.name}${limit === 1 ? "" : "s"} are available for this rental.`);
+      return;
+    }
+    setSelectedExtras((current) => {
+      const selected = current.some((item) => item.id === extraId);
+      if (quantity === 0) return current.filter((item) => item.id !== extraId);
+      return selected
+        ? current.map((item) => item.id === extraId ? { ...item, quantity } : item)
+        : [...current, { id: extraId, quantity }];
+    });
+    setError("");
   }
 
   function saveExtras() {
+    const errors = validateSelectedExtras(selectedExtras);
+    if (errors.length > 0) {
+      setError(errors[0]);
+      return;
+    }
     const updated = updateBookingExtras(booking!, selectedExtras);
     setBooking(updated);
     setEditingExtras(false);
+    setError("");
     setMessage("Optional extras updated. The mock total was recalculated.");
   }
 
@@ -54,6 +81,7 @@ export default function ManageBookingPage() {
       </section>
       <div className="content-wrap">
         {message && <div className="alert alert-success" role="status" style={{ marginBottom: 20 }}>{message}</div>}
+        {error && <div className="alert alert-error" role="alert" style={{ marginBottom: 20 }}>{error}</div>}
         <div className="checkout-grid">
           <div>
             <section className="form-panel">
@@ -73,7 +101,35 @@ export default function ManageBookingPage() {
                 </>
               ) : (
                 <div className="extra-list">
-                  {extras.map((extra) => <label className="extra-option" key={extra.id}><input type="checkbox" checked={selectedExtras.some((item) => item.id === extra.id)} onChange={() => toggle(extra.id)} /><span><strong>{extra.name}</strong><p>{extra.description}</p></span><span>{formatMoney(extra.price)}</span></label>)}
+                  {extras.map((extra) => {
+                    const quantity = selectedExtras.find((item) => item.id === extra.id)?.quantity ?? 0;
+                    const limit = extraQuantityLimit(extra.id);
+                    const unavailable = limit === 0;
+                    return (
+                      <div className="extra-option" key={extra.id}>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={quantity > 0}
+                            disabled={unavailable && quantity === 0}
+                            onChange={() => setQuantity(extra.id, quantity > 0 ? 0 : 1)}
+                          />
+                          <span><strong>{extra.name}</strong><p>{extra.description}</p></span>
+                        </label>
+                        <span>{formatMoney(extra.price)}</span>
+                        {unavailable ? <span className="extra-availability">Unavailable</span> : quantity > 0 ? (
+                          <span className="quantity-controls">
+                            <button type="button" onClick={() => setQuantity(extra.id, quantity - 1)} aria-label={`Decrease ${extra.name} quantity`}>-</button>
+                            <output aria-label={`${extra.name} quantity`}>{quantity}</output>
+                            <button type="button" onClick={() => setQuantity(extra.id, quantity + 1)} disabled={quantity >= limit} aria-label={`Increase ${extra.name} quantity`}>+</button>
+                            <small>{limit} available</small>
+                          </span>
+                        ) : (
+                          <small className="extra-availability">{limit} available</small>
+                        )}
+                      </div>
+                    );
+                  })}
                   <div className="form-actions"><button className="button button-secondary" type="button" onClick={() => setEditingExtras(false)}>Discard</button><button className="button button-primary" type="button" onClick={saveExtras}>Save changes</button></div>
                 </div>
               )}
@@ -91,4 +147,3 @@ export default function ManageBookingPage() {
     </>
   );
 }
-
