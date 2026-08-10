@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PriceBreakdown } from "@/components/PriceBreakdown";
 import { extras, findLocation, findVehicle } from "@/lib/fixtures";
 import { formatDateTime, formatMoney } from "@/lib/rental";
@@ -28,6 +28,11 @@ export default function ManageBookingPage() {
     setReturnAt(found?.search.returnAt || "");
   }, [params.bookingId]);
 
+  const dateTimeReview = useMemo(
+    () => booking && editingDateTimes ? reviewBookingDateTimes(booking, pickupAt, returnAt) : undefined,
+    [booking, editingDateTimes, pickupAt, returnAt],
+  );
+
   if (booking === undefined) return <div className="content-wrap">Loading booking…</div>;
   if (!booking) return <div className="content-wrap"><div className="empty-state"><h1>Booking not found</h1><Link className="button button-primary" href="/manage-booking">Try another reference</Link></div></div>;
   const vehicle = findVehicle(booking.vehicleId)!;
@@ -43,10 +48,6 @@ export default function ManageBookingPage() {
     setEditingExtras(false);
     setMessage("Optional extras updated. The mock total was recalculated.");
   }
-
-  const dateTimeReview = editingDateTimes
-    ? reviewBookingDateTimes(booking, pickupAt, returnAt)
-    : undefined;
 
   function startDateTimeEdit() {
     setPickupAt(booking!.search.pickupAt);
