@@ -1,11 +1,14 @@
 import { extras, findExtra, MOCK_CLOCK, vehicles } from "./fixtures";
 import type {
   DemoScenario,
+  FuelType,
   Quote,
   QuoteLine,
   SearchCriteria,
   SelectedExtra,
+  Transmission,
   Vehicle,
+  VehicleCategory,
 } from "./types";
 
 export const defaultSearch: SearchCriteria = {
@@ -43,6 +46,21 @@ export function searchVehicles(
       vehicle.inventory > 0 &&
       vehicle.locationIds.includes(search.pickupLocationId) &&
       search.driverAge >= vehicle.minimumDriverAge,
+  );
+}
+
+export interface VehicleFilters {
+  categories?: readonly VehicleCategory[];
+  fuelTypes?: readonly FuelType[];
+  transmissions?: readonly Transmission[];
+}
+
+export function filterVehicles(vehicles: readonly Vehicle[], filters: VehicleFilters): Vehicle[] {
+  return vehicles.filter(
+    (vehicle) =>
+      (!filters.categories?.length || filters.categories.includes(vehicle.category)) &&
+      (!filters.fuelTypes?.length || filters.fuelTypes.includes(vehicle.fuelType)) &&
+      (!filters.transmissions?.length || filters.transmissions.includes(vehicle.transmission)),
   );
 }
 
@@ -122,4 +140,3 @@ export function formatDateTime(value: string): string {
     minute: "2-digit",
   }).format(new Date(value));
 }
-
