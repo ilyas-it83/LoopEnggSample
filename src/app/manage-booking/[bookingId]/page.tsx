@@ -5,27 +5,43 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PriceBreakdown } from "@/components/PriceBreakdown";
 import { extras, findLocation, findVehicle } from "@/lib/fixtures";
-import { formatDateTime, formatMoney } from "@/lib/rental";
-import { cancelBooking, findBooking, updateBookingExtras } from "@/lib/storage";
-import type { Booking, SelectedExtra } from "@/lib/types";
+import { formatDateTime, formatMoney, searchVehicles, vehicleAvailability } from "@/lib/rental";
+import { cancelBooking, findBooking, getScenario, updateBookingExtras, updateBookingVehicle } from "@/lib/storage";
+import type { Booking, DemoScenario, SelectedExtra } from "@/lib/types";
 
 export default function ManageBookingPage() {
   const params = useParams<{ bookingId: string }>();
   const [booking, setBooking] = useState<Booking | null | undefined>(undefined);
   const [editingExtras, setEditingExtras] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
+  const [editingVehicle, setEditingVehicle] = useState(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState("");
+  const [vehicleError, setVehicleError] = useState("");
+  const [scenario, setCurrentScenario] = useState<DemoScenario>("normal");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     const found = findBooking(params.bookingId);
     setBooking(found || null);
     setSelectedExtras(found?.extras || []);
+    setSelectedVehicleId(found?.vehicleId || "");
   }, [params.bookingId]);
+
+  useEffect(() => {
+    const update = () => setCurrentScenario(getScenario());
+    update();
+    window.addEventListener("drivewise-storage", update);
+    return () => window.removeEventListener("drivewise-storage", update);
+  }, []);
 
   if (booking === undefined) return <div className="content-wrap">Loading booking…</div>;
   if (!booking) return <div className="content-wrap"><div className="empty-state"><h1>Booking not found</h1><Link className="button button-primary" href="/manage-booking">Try another reference</Link></div></div>;
   const vehicle = findVehicle(booking.vehicleId)!;
   const canChange = booking.status === "Confirmed";
+  const candidateVehicles = [
+    vehicle,
+    ...searchVehicles(booking.search, scenario).filter((item) => item.id !== vehicle.id),
+  ];
 
   function toggle(extraId: string) {
     setSelectedExtras((current) => current.some((item) => item.id === extraId) ? current.filter((item) => item.id !== extraId) : [...current, { id: extraId, quantity: 1 }]);
@@ -36,6 +52,24 @@ export default function ManageBookingPage() {
     setBooking(updated);
     setEditingExtras(false);
     setMessage("Optional extras updated. The mock total was recalculated.");
+  }
+
+  function openVehicleChange() {
+    setVehicleError("");
+    setSelectedVehicleId(booking!.vehicleId);
+    setEditingVehicle(true);
+  }
+
+  function saveVehicle() {
+    setVehicleError("");
+    try {
+      const updated = updateBookingVehicle(booking!, selectedVehicleId, scenario);
+      setBooking(updated);
+      setEditingVehicle(false);
+      setMessage(`Vehicle updated to ${findVehicle(selectedVehicleId)!.example}. The mock total was recalculated.`);
+    } catch (error) {
+      setVehicleError(error instanceof Error ? error.message : "This vehicle could not be selected.");
+    }
   }
 
   function cancel() {
@@ -65,6 +99,44 @@ export default function ManageBookingPage() {
                 <dt>Driver</dt><dd>{booking.driver.firstName} {booking.driver.lastName}</dd>
                 <dt>Payment</dt><dd>{booking.payment.brand} ending {booking.payment.last4}</dd>
               </dl>
+              <h2>Vehicle</h2>
+              {scenario === "vehicle-unavailable" && (
+                <div className="alert alert-error" role="alert" style={{ marginBottom: 14 }}>Vehicle changes are unavailable under the active demo scenario.</div>
+              )}
+              {!editingVehicle ? (
+                <>
+                  <p>{vehicle.example} · {vehicle.category} or similar</p>
+                  <button className="button button-secondary" type="button" disabled={!canChange} onClick={openVehicleChange}>Modify vehicle</button>
+                </>
+              ) : (
+                <div className="extra-list">
+                  {vehicleError && <div className="alert alert-error" role="alert" style={{ marginBottom: 14 }}>{vehicleError}</div>}
+                  {candidateVehicles.map((candidate) => {
+                    const availability = vehicleAvailability(candidate, booking.search, scenario);
+                    const isCurrent = candidate.id === vehicle.id;
+                    return (
+                      <label className="extra-option" key={candidate.id}>
+                        <input
+                          type="radio"
+                          name="vehicle-selection"
+                          value={candidate.id}
+                          checked={selectedVehicleId === candidate.id}
+                          disabled={!availability.available && !isCurrent}
+                          onChange={() => setSelectedVehicleId(candidate.id)}
+                        />
+                        <span>
+                          <strong>{candidate.example}</strong>
+                          <p>{candidate.category} · {formatMoney(candidate.dailyRate)}/day{!availability.available ? ` · ${availability.reason}` : ""}</p>
+                        </span>
+                      </label>
+                    );
+                  })}
+                  <div className="form-actions">
+                    <button className="button button-secondary" type="button" onClick={() => setEditingVehicle(false)}>Discard</button>
+                    <button className="button button-primary" type="button" onClick={saveVehicle}>Save changes</button>
+                  </div>
+                </div>
+              )}
               <h2>Optional extras</h2>
               {!editingExtras ? (
                 <>

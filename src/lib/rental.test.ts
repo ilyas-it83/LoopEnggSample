@@ -7,6 +7,7 @@ import {
   rentalDays,
   searchVehicles,
   validateSearch,
+  vehicleAvailability,
 } from "./rental";
 
 describe("rental search rules", () => {
@@ -31,6 +32,35 @@ describe("rental search rules", () => {
   it("excludes vehicles above the driver's age eligibility", () => {
     const results = searchVehicles({ ...defaultSearch, driverAge: 21 });
     expect(results.every((vehicle) => vehicle.minimumDriverAge <= 21)).toBe(true);
+  });
+});
+
+describe("vehicle availability for modification", () => {
+  it("is available when inventory, location, and driver age are eligible", () => {
+    const vehicle = findVehicle("compact-1")!;
+    expect(vehicleAvailability(vehicle, defaultSearch)).toEqual({ available: true });
+  });
+
+  it("is unavailable when the vehicle-unavailable scenario is active", () => {
+    const vehicle = findVehicle("compact-1")!;
+    const result = vehicleAvailability(vehicle, defaultSearch, "vehicle-unavailable");
+    expect(result.available).toBe(false);
+    expect(result.reason).toMatch(/unavailable/i);
+  });
+
+  it("is unavailable when the vehicle does not serve the pickup location", () => {
+    const vehicle = findVehicle("economy-1")!;
+    expect(vehicle.locationIds).not.toContain(defaultSearch.pickupLocationId);
+    const result = vehicleAvailability(vehicle, defaultSearch);
+    expect(result.available).toBe(false);
+    expect(result.reason).toMatch(/pickup location/i);
+  });
+
+  it("is unavailable when the driver is below the vehicle's minimum age", () => {
+    const vehicle = findVehicle("suv-1")!;
+    const result = vehicleAvailability(vehicle, { ...defaultSearch, driverAge: 22 });
+    expect(result.available).toBe(false);
+    expect(result.reason).toMatch(/must be at least/i);
   });
 });
 

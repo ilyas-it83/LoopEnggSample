@@ -1,6 +1,6 @@
 "use client";
 
-import { buildQuote, defaultSearch } from "./rental";
+import { buildQuote, defaultSearch, vehicleAvailability } from "./rental";
 import { findVehicle } from "./fixtures";
 import type {
   Booking,
@@ -149,6 +149,33 @@ export function updateBookingExtras(booking: Booking, selectedExtras: SelectedEx
     history: [
       ...booking.history,
       { id: `history-${Date.now()}`, action: "Modified", at: now, detail: "Optional extras were updated." },
+    ],
+  };
+  saveBooking(updated);
+  return updated;
+}
+
+export function updateBookingVehicle(booking: Booking, vehicleId: string, scenario: DemoScenario = "normal"): Booking {
+  if (booking.status !== "Confirmed") {
+    throw new Error("Cancelled, active, and completed bookings cannot be modified.");
+  }
+  const vehicle = findVehicle(vehicleId);
+  if (!vehicle) {
+    throw new Error("Selected vehicle could not be found.");
+  }
+  const availability = vehicleAvailability(vehicle, booking.search, scenario);
+  if (!availability.available) {
+    throw new Error(availability.reason || "This vehicle is not available for this booking.");
+  }
+  const now = new Date().toISOString();
+  const updated: Booking = {
+    ...booking,
+    vehicleId,
+    quote: buildQuote(booking.search, vehicle, booking.extras, scenario),
+    updatedAt: now,
+    history: [
+      ...booking.history,
+      { id: `history-${Date.now()}`, action: "Vehicle changed", at: now, detail: `Vehicle updated to ${vehicle.example}.` },
     ],
   };
   saveBooking(updated);

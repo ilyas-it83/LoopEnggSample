@@ -55,3 +55,31 @@ test("no-results scenario provides recovery guidance", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "No vehicles match this search" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
 });
+
+test("customer modifies the vehicle on an eligible booking", async ({ page }) => {
+  await page.goto("/manage-booking");
+  await page.getByRole("button", { name: "Find booking" }).click();
+  await expect(page.getByText("Rental itinerary")).toBeVisible();
+
+  await page.getByRole("button", { name: "Modify vehicle" }).click();
+  const alternative = page.locator("label.extra-option").filter({ hasNot: page.getByRole("radio", { checked: true }) }).first();
+  const alternativeName = await alternative.locator("strong").innerText();
+  await alternative.getByRole("radio").check();
+  await page.getByRole("button", { name: "Save changes" }).click();
+
+  await expect(page.getByRole("status")).toContainText(`Vehicle updated to ${alternativeName}`);
+  await expect(page.getByRole("heading", { name: alternativeName })).toBeVisible();
+});
+
+test("vehicle modification is blocked when the vehicle-unavailable scenario is active", async ({ page }) => {
+  await page.goto("/demo-controls");
+  await page.getByRole("button", { name: /Vehicle unavailable/ }).click();
+
+  await page.goto("/manage-booking");
+  await page.getByRole("button", { name: "Find booking" }).click();
+  await page.getByRole("button", { name: "Modify vehicle" }).click();
+  await expect(page.locator(".alert-error").first()).toContainText(/unavailable/i);
+
+  const alternative = page.locator("label.extra-option").filter({ hasNot: page.getByRole("radio", { checked: true }) }).first();
+  await expect(alternative.getByRole("radio")).toBeDisabled();
+});
