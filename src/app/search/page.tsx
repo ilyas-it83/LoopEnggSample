@@ -103,7 +103,7 @@ function SearchResults() {
             {results.length === 0 ? (
               <div className="empty-state">
                 <h2>No vehicles match this search</h2>
-                <p>{minPassengers ? "Try a lower passenger capacity, clear filters, or change the dates, location, or driver age. The no-results demo scenario may also be enabled." : "Change the dates, location, driver age, or active filters. The no-results demo scenario may also be enabled."}</p>
+                <p>{minPassengers !== undefined ? "Try a lower passenger capacity, clear filters, or change the dates, location, or driver age. The no-results demo scenario may also be enabled." : "Change the dates, location, driver age, or active filters. The no-results demo scenario may also be enabled."}</p>
                 <button className="button button-secondary" type="button" onClick={clearFilters}>Clear filters</button>
               </div>
             ) : (
