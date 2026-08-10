@@ -12,7 +12,7 @@ const scenarios: Array<{ id: DemoScenario; name: string; description: string }> 
   { id: "vehicle-unavailable", name: "Vehicle unavailable", description: "Selection becomes unavailable before checkout confirmation." },
   { id: "price-change", name: "Price change", description: "Rates increase at final review and require explicit acceptance." },
   { id: "payment-decline", name: "Payment decline", description: "Every mock card authorization is declined." },
-  { id: "service-error", name: "Service error", description: "Search and booking services show recoverable failures." },
+  { id: "service-error", name: "Service error", description: "Search, profile, and booking services show recoverable failures." },
 ];
 
 export default function DemoControlsPage() {
@@ -49,4 +49,3 @@ export default function DemoControlsPage() {
     </>
   );
 }
-
