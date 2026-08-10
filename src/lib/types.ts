@@ -49,6 +49,7 @@ export interface RentalLocation {
 
 export interface Vehicle {
   id: string;
+  ratePlanId: string;
   category: VehicleCategory;
   name: string;
   example: string;
@@ -64,6 +65,52 @@ export interface Vehicle {
   locationIds: string[];
   inventory: number;
   accent: string;
+}
+
+export interface RatePlanFixture {
+  id: string;
+  name: string;
+  vehicleCategory: VehicleCategory;
+  currency: "USD";
+  billingUnit: "day";
+  baseAmount: number;
+  modelIncrement: number;
+  priceChangeAdjustment: number;
+}
+
+export interface FeeFixture {
+  id: "one-way" | "young-driver";
+  label: string;
+  pricingModel: "per-day" | "per-rental";
+  amount: number;
+  condition: "different-return-location" | "driver-age-range";
+  minimumAge?: number;
+  maximumAge?: number;
+}
+
+export interface TaxFixture {
+  id: string;
+  label: string;
+  rateBasisPoints: number;
+  calculationOrder: "after-discounts";
+}
+
+export interface PromotionFixture {
+  code: string;
+  label: string;
+  discountType: "percentage" | "fixed";
+  value: number;
+  validFrom: string;
+  validThrough: string;
+  maxRentalDays?: number;
+  stackable: false;
+}
+
+export interface PricingFixtureCatalog {
+  ratePlans: readonly RatePlanFixture[];
+  fees: readonly FeeFixture[];
+  taxes: readonly TaxFixture[];
+  promotions: readonly PromotionFixture[];
 }
 
 export interface SearchCriteria {

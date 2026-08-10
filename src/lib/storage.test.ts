@@ -13,7 +13,7 @@ import {
   updateBookingExtras,
   updateBookingVehicle,
 } from "./storage";
-import { findVehicle } from "./fixtures";
+import { findRatePlan, findVehicle } from "./fixtures";
 
 describe("recently viewed vehicle ordering", () => {
   beforeEach(() => window.localStorage.clear());
@@ -117,7 +117,11 @@ describe("booking date-time modification", () => {
         "2026-08-25T09:00",
       );
       expect(changed.booking.quote.lines.find((line) => line.id === "base")?.amount)
-        .toBe((findVehicle(booking.vehicleId)!.dailyRate + 800) * changed.booking.quote.days);
+        .toBe(
+          (findVehicle(booking.vehicleId)!.dailyRate +
+            findRatePlan(findVehicle(booking.vehicleId)!.ratePlanId)!.priceChangeAdjustment) *
+          changed.booking.quote.days,
+        );
 
       resetDemo();
       setScenario("service-error");
@@ -179,7 +183,11 @@ describe("booking vehicle modification", () => {
       );
       const base = extrasUpdated.quote.lines.find((line) => line.id === "base")?.amount;
 
-      expect(base).toBe((findVehicle("midsize-1")!.dailyRate + 800) * extrasUpdated.quote.days);
+      expect(base).toBe(
+        (findVehicle("midsize-1")!.dailyRate +
+          findRatePlan(findVehicle("midsize-1")!.ratePlanId)!.priceChangeAdjustment) *
+        extrasUpdated.quote.days,
+      );
     });
 
     it("rejects no-op, unavailable, ineligible, and cancelled changes", () => {

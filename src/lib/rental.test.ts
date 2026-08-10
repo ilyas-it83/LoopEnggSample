@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { extras, findVehicle, vehicles } from "./fixtures";
+import {
+  extras,
+  fees,
+  findRatePlan,
+  findVehicle,
+  taxes,
+  vehicles,
+} from "./fixtures";
 import { buildComparison } from "./comparison";
 import {
   buildQuote,
@@ -265,6 +272,10 @@ describe("rental pricing rules", () => {
       driverAge: 23,
     }, vehicle);
     expect(quote.lines.map((line) => line.id)).toEqual(expect.arrayContaining(["one-way", "young-driver"]));
+    expect(quote.lines.find((line) => line.id === "one-way")?.amount)
+      .toBe(fees.find((fee) => fee.id === "one-way")?.amount);
+    expect(quote.lines.find((line) => line.id === "young-driver")?.amount)
+      .toBe((fees.find((fee) => fee.id === "young-driver")?.amount ?? 0) * quote.days);
   });
 
   it("prices per-day and per-rental extras correctly", () => {
@@ -290,13 +301,24 @@ describe("rental pricing rules", () => {
 
   it("describes recognized and rejected promotions distinctly", () => {
     expect(promotionMessage("DRIVE10", 3)).toContain("applied");
+    expect(promotionMessage("WEEKEND25", 5)).toContain("4 days or fewer");
+    expect(promotionMessage("EXPIRED10", 3)).toContain("expired");
     expect(promotionMessage("UNKNOWN", 3)).toContain("not recognized");
   });
 
   it("makes the price-change scenario deterministic", () => {
     const normal = buildQuote(defaultSearch, vehicle);
     const changed = buildQuote(defaultSearch, vehicle, [], "price-change");
+    const ratePlan = findRatePlan(vehicle.ratePlanId)!;
     expect(changed.total).toBeGreaterThan(normal.total);
+    expect(changed.lines.find((line) => line.id === "base")?.amount)
+      .toBe((vehicle.dailyRate + ratePlan.priceChangeAdjustment) * changed.days);
     expect(buildQuote(defaultSearch, vehicle, [], "price-change")).toEqual(changed);
+  });
+
+  it("calculates the fixture tax after discounts", () => {
+    const quote = buildQuote({ ...defaultSearch, promoCode: "DRIVE10" }, vehicle);
+    expect(quote.lines.find((line) => line.id === "tax")?.amount)
+      .toBe(Math.round(quote.subtotal * taxes[0].rateBasisPoints / 10_000));
   });
 });

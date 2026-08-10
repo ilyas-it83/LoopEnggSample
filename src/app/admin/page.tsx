@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { PricingFixturePanel } from "@/components/PricingFixturePanel";
 import { locations, vehicles } from "@/lib/fixtures";
 import { formatMoney } from "@/lib/rental";
 import { getBookings } from "@/lib/storage";
@@ -19,6 +20,7 @@ export default function AdminPage() {
           <article className="simple-card"><h2>Vehicles</h2><div className="stat">{vehicles.length}</div><p>Across eight rental categories.</p></article>
           <article className="simple-card"><h2>Bookings</h2><div className="stat">{bookings.length}</div><p>Mutable local demo records.</p></article>
         </div>
+        <PricingFixturePanel />
         <div className="section-heading" style={{ marginTop: 55 }}><div><p className="eyebrow">Inventory</p><h2>Vehicle fixtures</h2></div><Link href="/demo-controls">Change scenario →</Link></div>
         <div className="table-wrap">
           <table><thead><tr><th>Vehicle</th><th>Category</th><th>Fuel</th><th>Locations</th><th>Inventory</th><th>Daily rate</th></tr></thead><tbody>
@@ -29,4 +31,3 @@ export default function AdminPage() {
     </>
   );
 }
-

@@ -5,6 +5,34 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole("button", { name: /Reset demo data/ }).click();
 });
 
+test("DW-023: administrator validates deterministic pricing fixtures", async ({ page }) => {
+  await page.goto("/admin");
+
+  const manifest = page.locator('dl[aria-label="Pricing fixture manifest"]');
+  await expect(manifest).toContainText("Rate plans8");
+  await expect(manifest).toContainText("Fees2");
+  await expect(manifest).toContainText("Taxes1");
+  await expect(manifest).toContainText("Promotions3");
+
+  await page.getByRole("button", { name: "Validate pricing fixtures" }).click();
+  await expect(page.getByRole("status")).toContainText("Pricing fixtures validated");
+});
+
+test("DW-023: pricing fixture validation provides service-error recovery", async ({ page }) => {
+  await page.getByRole("button", { name: "Service error" }).click();
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "Validate pricing fixtures" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Pricing fixture validation is unavailable" }),
+  ).toContainText("Switch to Normal in Demo controls and retry");
+
+  await page.goto("/demo-controls");
+  await page.getByRole("button", { name: "Normal" }).click();
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "Validate pricing fixtures" }).click();
+  await expect(page.getByRole("status")).toContainText("Pricing fixtures validated");
+});
+
 test("customer searches and selects an available vehicle", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Search cars" }).click();

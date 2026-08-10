@@ -1,4 +1,13 @@
-import { extras, findExtra, MOCK_CLOCK, vehicles } from "./fixtures";
+import {
+  extras,
+  findExtra,
+  findFee,
+  findPromotion,
+  findRatePlan,
+  MOCK_CLOCK,
+  taxes,
+  vehicles,
+} from "./fixtures";
 import type {
   AccessibilityFeature,
   DemoScenario,
@@ -183,14 +192,31 @@ export function buildQuote(
 ): Quote {
   const days = rentalDays(search);
   const lines: QuoteLine[] = [];
-  const rate = scenario === "price-change" ? vehicle.dailyRate + 800 : vehicle.dailyRate;
+  const ratePlan = findRatePlan(vehicle.ratePlanId);
+  if (!ratePlan) throw new Error(`Rate plan ${vehicle.ratePlanId} was not found.`);
+  const rate = scenario === "price-change"
+    ? vehicle.dailyRate + ratePlan.priceChangeAdjustment
+    : vehicle.dailyRate;
   lines.push({ id: "base", label: `${vehicle.category} rental · ${days} day${days === 1 ? "" : "s"}`, amount: rate * days, kind: "charge" });
 
   if (search.pickupLocationId !== search.returnLocationId) {
-    lines.push({ id: "one-way", label: "One-way location fee", amount: 4500, kind: "charge" });
+    const fee = findFee("one-way");
+    if (!fee) throw new Error("One-way fee fixture was not found.");
+    lines.push({ id: fee.id, label: fee.label, amount: fee.amount, kind: "charge" });
   }
-  if (search.driverAge >= 21 && search.driverAge <= 24) {
-    lines.push({ id: "young-driver", label: `Young driver fee · ${days} days`, amount: 2500 * days, kind: "charge" });
+  const youngDriverFee = findFee("young-driver");
+  if (!youngDriverFee) throw new Error("Young driver fee fixture was not found.");
+  if (
+    search.driverAge >= (youngDriverFee.minimumAge ?? 0) &&
+    search.driverAge <= (youngDriverFee.maximumAge ?? Number.POSITIVE_INFINITY)
+  ) {
+    const multiplier = youngDriverFee.pricingModel === "per-day" ? days : 1;
+    lines.push({
+      id: youngDriverFee.id,
+      label: `${youngDriverFee.label} · ${days} days`,
+      amount: youngDriverFee.amount * multiplier,
+      kind: "charge",
+    });
   }
 
   validSelectedExtras(selectedExtras).forEach((selection) => {
@@ -207,15 +233,19 @@ export function buildQuote(
 
   const charges = lines.reduce((sum, line) => sum + line.amount, 0);
   const code = search.promoCode?.trim().toUpperCase();
-  if (code === "DRIVE10") {
-    lines.push({ id: "promo", label: "DRIVE10 promotion", amount: -Math.round(charges * 0.1), kind: "discount" });
-  } else if (code === "WEEKEND25" && days <= 4) {
-    lines.push({ id: "promo", label: "WEEKEND25 promotion", amount: -2500, kind: "discount" });
+  const promotion = code ? findPromotion(code) : undefined;
+  if (promotion && promotionEligibility(promotion, days) === "eligible") {
+    const discount = promotion.discountType === "percentage"
+      ? Math.round(charges * promotion.value / 10_000)
+      : promotion.value;
+    lines.push({ id: "promo", label: promotion.label, amount: -discount, kind: "discount" });
   }
 
   const subtotal = Math.max(0, lines.reduce((sum, line) => sum + line.amount, 0));
-  const tax = Math.round(subtotal * 0.0825);
-  lines.push({ id: "tax", label: "Estimated taxes", amount: tax, kind: "tax" });
+  const taxFixture = taxes[0];
+  if (!taxFixture) throw new Error("Tax fixture was not found.");
+  const tax = Math.round(subtotal * taxFixture.rateBasisPoints / 10_000);
+  lines.push({ id: taxFixture.id, label: taxFixture.label, amount: tax, kind: "tax" });
 
   return {
     currency: "USD",
@@ -227,13 +257,32 @@ export function buildQuote(
   };
 }
 
+function promotionEligibility(
+  promotion: NonNullable<ReturnType<typeof findPromotion>>,
+  days: number,
+): "eligible" | "expired" | "not-active" | "duration" {
+  const mockTime = Date.parse(MOCK_CLOCK);
+  if (mockTime < Date.parse(promotion.validFrom)) return "not-active";
+  if (mockTime > Date.parse(promotion.validThrough)) return "expired";
+  if (promotion.maxRentalDays !== undefined && days > promotion.maxRentalDays) return "duration";
+  return "eligible";
+}
+
 export function promotionMessage(code: string, days: number): string {
   const normalized = code.trim().toUpperCase();
   if (!normalized) return "";
-  if (normalized === "DRIVE10") return "10% promotion applied.";
-  if (normalized === "WEEKEND25" && days <= 4) return "$25 promotion applied.";
-  if (normalized === "WEEKEND25") return "WEEKEND25 is only valid for rentals of four days or fewer.";
-  return "Promotion code was not recognized.";
+  const promotion = findPromotion(normalized);
+  if (!promotion) return "Promotion code was not recognized.";
+  const eligibility = promotionEligibility(promotion, days);
+  if (eligibility === "expired") return `${promotion.code} has expired. Choose another promotion.`;
+  if (eligibility === "not-active") return `${promotion.code} is not active yet. Choose another promotion.`;
+  if (eligibility === "duration") {
+    return `${promotion.code} is only valid for rentals of ${promotion.maxRentalDays} days or fewer.`;
+  }
+  if (promotion.discountType === "percentage") {
+    return `${promotion.value / 100}% promotion applied.`;
+  }
+  return `${formatMoney(promotion.value)} promotion applied.`;
 }
 
 export const availableExtraIds = new Set(extras.map((extra) => extra.id));
