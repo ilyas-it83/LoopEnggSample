@@ -58,7 +58,7 @@ test("no-results scenario provides recovery guidance", async ({ page }) => {
 
 test("customer filters vehicles by estimated price range", async ({ page }) => {
   await page.goto("/search");
-  await page.getByLabel("Maximum").fill("200");
+  await page.getByLabel("Maximum", { exact: true }).fill("200");
   await page.getByRole("button", { name: "Apply price range" }).click();
 
   await expect(page.getByText("2 matching vehicles")).toBeVisible();
@@ -70,11 +70,11 @@ test("customer receives recovery guidance for an invalid estimated price range",
   const baseline = await count.textContent();
   expect(baseline).toBeTruthy();
 
-  await page.getByLabel("Minimum").fill("200");
-  await page.getByLabel("Maximum").fill("100");
+  await page.getByLabel("Minimum", { exact: true }).fill("200");
+  await page.getByLabel("Maximum", { exact: true }).fill("100");
   await page.getByRole("button", { name: "Apply price range" }).click();
 
-  await expect(page.getByRole("alert")).toContainText("Minimum estimated price cannot be greater than maximum estimated price.");
+  await expect(page.locator("#price-range-error")).toContainText("Minimum estimated price cannot be greater than maximum estimated price.");
   await expect(count).toHaveText(baseline!);
 });
 
