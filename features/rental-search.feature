@@ -16,6 +16,19 @@ Feature: Search for an available rental vehicle
     Then no vehicle cards are displayed
     And recovery guidance is displayed
 
+  Scenario: Customer filters by an accessibility-related feature
+    Given the default mock inventory is available
+    When the customer selects "Wheelchair-accessible entry"
+    Then only vehicles with that accessibility feature are displayed
+    And the matching vehicle count is announced
+
+  @error
+  Scenario: Accessibility filters have no shared matching vehicle
+    Given the default mock inventory is available
+    When the customer selects "Hand controls" and "Wheelchair-accessible entry"
+    Then no vehicle cards are displayed
+    And recovery guidance is displayed
+
   Scenario: Customer filters results by estimated price range
     Given available vehicles exist at "Harbor International Airport"
     When the customer applies an estimated total maximum of "$200"

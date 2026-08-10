@@ -4,6 +4,7 @@ import {
   buildQuote,
   defaultSearch,
   filterVehicles,
+  filterVehiclesByAccessibility,
   filterVehiclesByEstimatedPrice,
   filterVehiclesByPassengerCapacity,
   promotionMessage,
@@ -114,6 +115,20 @@ describe("rental search rules", () => {
   it("preserves available vehicles when no passenger capacity is selected", () => {
     const results = searchVehicles(defaultSearch);
     expect(filterVehiclesByPassengerCapacity(results)).toEqual(results);
+  });
+
+  it("returns only vehicles with every selected accessibility feature", () => {
+    const accessibleVehicles = filterVehiclesByAccessibility(
+      vehicles,
+      ["Wheelchair-accessible entry"],
+    );
+
+    expect(accessibleVehicles).not.toHaveLength(0);
+    expect(
+      accessibleVehicles.every((vehicle) =>
+        vehicle.accessibilityFeatures.includes("Wheelchair-accessible entry")),
+    ).toBe(true);
+    expect(filterVehiclesByAccessibility(accessibleVehicles, ["Hand controls"])).toEqual([]);
   });
 });
 

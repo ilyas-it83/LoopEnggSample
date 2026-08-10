@@ -1,5 +1,6 @@
 import { extras, findExtra, MOCK_CLOCK, vehicles } from "./fixtures";
 import type {
+  AccessibilityFeature,
   DemoScenario,
   EstimatedPriceRange,
   FuelType,
@@ -79,6 +80,16 @@ export function filterVehiclesByPassengerCapacity(
 ): Vehicle[] {
   if (minimumPassengers === undefined) return availableVehicles;
   return availableVehicles.filter((vehicle) => vehicle.passengers >= minimumPassengers);
+}
+
+export function filterVehiclesByAccessibility(
+  availableVehicles: readonly Vehicle[],
+  features: readonly AccessibilityFeature[],
+): Vehicle[] {
+  return features.length === 0
+    ? [...availableVehicles]
+    : availableVehicles.filter((vehicle) =>
+      features.every((feature) => vehicle.accessibilityFeatures.includes(feature)));
 }
 
 export interface VehicleFilters {

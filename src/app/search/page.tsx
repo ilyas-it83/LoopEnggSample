@@ -8,13 +8,16 @@ import {
   buildQuote,
   defaultSearch,
   filterVehicles,
+  filterVehiclesByAccessibility,
   filterVehiclesByEstimatedPrice,
   filterVehiclesByPassengerCapacity,
   searchVehicles,
   validateEstimatedPriceRange,
 } from "@/lib/rental";
 import { getScenario } from "@/lib/storage";
+import { ACCESSIBILITY_FEATURES } from "@/lib/types";
 import type {
+  AccessibilityFeature,
   DemoScenario,
   EstimatedPriceRange,
   FuelType,
@@ -37,6 +40,7 @@ function SearchResults() {
   const [categories, setCategories] = useState<VehicleCategory[]>([]);
   const [fuel, setFuel] = useState<FuelType[]>([]);
   const [transmissions, setTransmissions] = useState<Transmission[]>([]);
+  const [accessibilityFeatures, setAccessibilityFeatures] = useState<AccessibilityFeature[]>([]);
   const [minimumPassengers, setMinimumPassengers] = useState<number>();
   const [sort, setSort] = useState("recommended");
   const [minimumPrice, setMinimumPrice] = useState("");
@@ -52,10 +56,11 @@ function SearchResults() {
   }, []);
 
   const availableVehicles = searchVehicles(search, scenario);
-  const baseResults = filterVehicles(
+  const attributeFilteredResults = filterVehicles(
     filterVehiclesByPassengerCapacity(availableVehicles, minimumPassengers),
     { categories, fuelTypes: fuel, transmissions },
   );
+  const baseResults = filterVehiclesByAccessibility(attributeFilteredResults, accessibilityFeatures);
   const priceFilteredResults = priceRange.min !== undefined || priceRange.max !== undefined
     ? filterVehiclesByEstimatedPrice(baseResults, search, priceRange, scenario)
     : baseResults;
@@ -80,6 +85,13 @@ function SearchResults() {
     setTransmissions((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
   }
 
+  function toggleAccessibilityFeature(feature: AccessibilityFeature) {
+    setAccessibilityFeatures((current) =>
+      current.includes(feature)
+        ? current.filter((item) => item !== feature)
+        : [...current, feature]);
+  }
+
   function applyPriceRange() {
     const nextRange: EstimatedPriceRange = {
       ...(minimumPrice !== "" ? { min: Math.round(Number(minimumPrice) * 100) } : {}),
@@ -99,6 +111,7 @@ function SearchResults() {
     setCategories([]);
     setFuel([]);
     setTransmissions([]);
+    setAccessibilityFeatures([]);
     setMinimumPassengers(undefined);
     setMinimumPrice("");
     setMaximumPrice("");
@@ -160,12 +173,25 @@ function SearchResults() {
               {priceRangeError && <p id="price-range-error" className="filter-error" role="alert">{priceRangeError} Correct the range and apply it again.</p>}
               <button className="button button-secondary button-small" type="submit">Apply price range</button>
             </form>
+            <fieldset className="filter-group">
+              <legend>Accessibility features</legend>
+              {ACCESSIBILITY_FEATURES.map((feature) => (
+                <label key={feature}>
+                  <input
+                    type="checkbox"
+                    checked={accessibilityFeatures.includes(feature)}
+                    onChange={() => toggleAccessibilityFeature(feature)}
+                  />{" "}
+                  {feature}
+                </label>
+              ))}
+            </fieldset>
             <button className="link-button" type="button" onClick={clearFilters}>Clear all filters</button>
           </aside>
           <section aria-live="polite">
             {scenario !== "service-error" && (
               <div className="result-toolbar">
-                <strong>{results.length} matching vehicles</strong>
+                <strong role="status">{results.length} matching vehicles</strong>
                 <label>Sort by{" "}
                   <select value={sort} onChange={(event) => setSort(event.target.value)}>
                     <option value="recommended">Recommended</option>
