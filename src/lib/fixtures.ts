@@ -8,6 +8,7 @@ import type {
 } from "./types";
 
 export const MOCK_CLOCK = "2026-08-10T10:00";
+export const DRIVEWISE_FIXTURE_VERSION = "drivewise-fixtures-v1";
 
 export const simulatedProfile: SimulatedProfile = {
   renter: {
