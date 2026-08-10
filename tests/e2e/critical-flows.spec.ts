@@ -56,21 +56,26 @@ test("simulated profile prefills checkout driver details", async ({ page }) => {
   await expect(page.getByLabel("phone")).toHaveValue("+1 555 010 2026");
   await expect(page.getByLabel("Date of birth")).toHaveValue("1990-04-18");
   await expect(page.getByLabel("License number")).toHaveValue("DEMO-48291");
-  await expect(page.getByRole("status")).toContainText("Simulated profile details were added");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Simulated profile details were added" }),
+  ).toBeVisible();
 });
 
 test("unavailable simulated profile does not change checkout details", async ({ page }) => {
-  await page.goto("/demo-controls");
-  await page.getByRole("button", { name: /Service error/ }).click();
   await page.goto("/");
   await page.getByRole("button", { name: "Search cars" }).click();
   await page.getByRole("link", { name: "View deal" }).first().click();
   await page.getByRole("button", { name: "Choose this car" }).click();
   await page.getByRole("button", { name: "Driver details" }).click();
+  await page.goto("/demo-controls");
+  await page.getByRole("button", { name: /Service error/ }).click();
+  await page.goto("/checkout/driver");
 
   await page.getByRole("button", { name: "Use simulated profile" }).click();
 
-  await expect(page.getByRole("alert")).toContainText("simulated profile is unavailable");
+  await expect(
+    page.getByRole("alert").filter({ hasText: "simulated profile is unavailable" }),
+  ).toBeVisible();
   await expect(page.getByLabel("email")).toHaveValue("");
 });
 
