@@ -15,7 +15,7 @@ import {
 } from "./storage";
 import { findVehicle } from "./fixtures";
 
-describe("recently viewed vehicles", () => {
+describe("recently viewed vehicle ordering", () => {
   beforeEach(() => window.localStorage.clear());
 
   it("tracks valid vehicles in most-recent-first order without duplicates", () => {
@@ -25,8 +25,9 @@ describe("recently viewed vehicles", () => {
 
     expect(getRecentlyViewed()).toEqual(["compact-1", "economy-1"]);
   });
+});
 
-  describe("booking date-time modification", () => {
+describe("booking date-time modification", () => {
     beforeEach(() => resetDemo());
 
     it("updates eligible dates, recalculates the quote, and records one audit entry", () => {
@@ -129,9 +130,9 @@ describe("recently viewed vehicles", () => {
         "We could not update this booking right now. Try again after resetting the demo scenario.",
       );
     });
-  });
+});
 
-  describe("local comparison state", () => {
+describe("local comparison state", () => {
     beforeEach(() => window.localStorage.clear());
 
     it("limits valid comparison selections to three vehicles", () => {
@@ -152,9 +153,9 @@ describe("recently viewed vehicles", () => {
 
       expect(getComparison()).toEqual(["compact-1"]);
     });
-  });
+});
 
-  describe("booking vehicle modification", () => {
+describe("booking vehicle modification", () => {
     beforeEach(() => window.localStorage.clear());
 
     it("changes to an available alternative and recalculates the quote", () => {
@@ -166,7 +167,10 @@ describe("recently viewed vehicles", () => {
       expect(updated.quote.lines.find((line) => line.id === "base")?.amount)
         .toBe(nextVehicle.dailyRate * updated.quote.days);
       expect(updated.history.at(-1)).toMatchObject({ action: "Vehicle changed" });
-    });
+});
+
+describe("recently viewed vehicle recovery", () => {
+    beforeEach(() => window.localStorage.clear());
 
     it("keeps scenario-adjusted pricing across vehicle and extra updates", () => {
       const [booking] = getBookings();

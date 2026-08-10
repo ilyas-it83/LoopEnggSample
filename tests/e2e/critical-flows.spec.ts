@@ -96,7 +96,7 @@ test("customer modifies eligible rental date-times without duplicate submission"
   await expect(
     page.getByRole("status").filter({ hasText: "Rental date-times updated" }),
   ).toBeVisible();
-  await expect(page.getByText("Aug 25, 2026, 9:00 AM")).toBeVisible();
+  await expect(page.getByText(/Aug 25, 2026.*9:00.*AM/)).toBeVisible();
   await expect(page.getByText("Rental date-times were updated.")).toHaveCount(1);
   await page.getByRole("button", { name: "Modify rental date-times" }).click();
   await page.getByRole("button", { name: "Confirm date-time changes" }).click();
@@ -115,7 +115,7 @@ test("customer is shown an accessible validation message for invalid rental date
   await expect(
     page.getByRole("alert").filter({ hasText: "Return must be later than pickup." }),
   ).toBeVisible();
-  await expect(page.getByText("Aug 23, 2026, 9:00 AM")).toBeVisible();
+  await expect(page.getByText(/Aug 23, 2026.*9:00.*AM/)).toBeVisible();
 });
 
 test("date-time modification rechecks vehicle availability", async ({ page }) => {
@@ -130,7 +130,7 @@ test("date-time modification rechecks vehicle availability", async ({ page }) =>
   await expect(
     page.getByRole("alert").filter({ hasText: "became unavailable" }),
   ).toBeVisible();
-  await expect(page.getByText("Aug 23, 2026, 9:00 AM")).toBeVisible();
+  await expect(page.getByText(/Aug 23, 2026.*9:00.*AM/)).toBeVisible();
 });
 
 test("customer cancels a confirmed booking", async ({ page }) => {

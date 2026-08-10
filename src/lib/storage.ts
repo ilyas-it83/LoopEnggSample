@@ -260,17 +260,18 @@ export function updateBookingDateTimes(
     return { booking, errors: review.errors, changed: false };
   }
 
+  const now = new Date().toISOString();
   const updated: Booking = {
     ...booking,
     search: review.search!,
     quote: review.quote!,
-    updatedAt: MOCK_CLOCK,
+    updatedAt: now,
     history: [
       ...booking.history,
       {
         id: `history-date-times-${booking.history.length + 1}`,
         action: "Modified",
-        at: MOCK_CLOCK,
+        at: now,
         detail: "Rental date-times were updated.",
       },
     ],
