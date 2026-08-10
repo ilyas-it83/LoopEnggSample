@@ -58,6 +58,8 @@ test("no-results scenario provides recovery guidance", async ({ page }) => {
 
 test("customer filters results by passenger capacity", async ({ page }) => {
   await page.goto("/search");
+  await page.getByLabel("Minimum passenger capacity").selectOption("5");
+  await expect(page.getByText("20 matching vehicles")).toBeVisible();
   await page.getByLabel("Minimum passenger capacity").selectOption("7");
   await expect(page.getByText("2 matching vehicles")).toBeVisible();
   await expect(page.getByRole("article")).toContainText("7 seats");
