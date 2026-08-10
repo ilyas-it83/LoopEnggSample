@@ -85,13 +85,13 @@ export const vehicles: Vehicle[] = vehicleSeeds.flatMap((seed, seedIndex) =>
 );
 
 export const extras: Extra[] = [
-  { id: "protection-basic", name: "Essential protection", description: "Reduced damage responsibility for this demo rental.", pricingModel: "per-day", price: 1800, maxQuantity: 1 },
-  { id: "protection-premium", name: "Premium protection", description: "Lowest mock responsibility plus tire and glass cover.", pricingModel: "per-day", price: 3200, maxQuantity: 1 },
-  { id: "additional-driver", name: "Additional driver", description: "Add one additional eligible driver.", pricingModel: "per-day", price: 1200, maxQuantity: 2 },
-  { id: "child-seat", name: "Child safety seat", description: "Age-appropriate child seat, subject to mock availability.", pricingModel: "per-day", price: 900, maxQuantity: 3 },
-  { id: "gps", name: "Portable navigation", description: "A dedicated navigation device.", pricingModel: "per-day", price: 700, maxQuantity: 1 },
-  { id: "roadside", name: "Roadside assistance", description: "Expanded roadside support for the rental period.", pricingModel: "per-rental", price: 2400, maxQuantity: 1 },
-  { id: "prepaid-fuel", name: "Prepaid fuel", description: "Return without refilling the tank.", pricingModel: "per-rental", price: 6500, maxQuantity: 1 },
+  { id: "protection-basic", name: "Essential protection", description: "Reduced damage responsibility for this demo rental.", pricingModel: "per-day", price: 1800, maxQuantity: 1, availableQuantity: 1 },
+  { id: "protection-premium", name: "Premium protection", description: "Lowest mock responsibility plus tire and glass cover.", pricingModel: "per-day", price: 3200, maxQuantity: 1, availableQuantity: 1 },
+  { id: "additional-driver", name: "Additional driver", description: "Add one additional eligible driver.", pricingModel: "per-day", price: 1200, maxQuantity: 2, availableQuantity: 1 },
+  { id: "child-seat", name: "Child safety seat", description: "Age-appropriate child seat, subject to mock availability.", pricingModel: "per-day", price: 900, maxQuantity: 3, availableQuantity: 2 },
+  { id: "gps", name: "Portable navigation", description: "A dedicated navigation device.", pricingModel: "per-day", price: 700, maxQuantity: 1, availableQuantity: 0 },
+  { id: "roadside", name: "Roadside assistance", description: "Expanded roadside support for the rental period.", pricingModel: "per-rental", price: 2400, maxQuantity: 1, availableQuantity: 1 },
+  { id: "prepaid-fuel", name: "Prepaid fuel", description: "Return without refilling the tank.", pricingModel: "per-rental", price: 6500, maxQuantity: 1, availableQuantity: 1 },
 ];
 
 export const findLocation = (id: string) => locations.find((location) => location.id === id);

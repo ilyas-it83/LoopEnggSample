@@ -156,11 +156,17 @@ main { min-height: 65vh; }
 .form-grid .span-2 { grid-column: 1 / -1; }
 .form-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--line); }
 .extra-list { display: grid; gap: 12px; }
-.extra-option { padding: 17px; border: 1px solid var(--line); display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; }
+.extra-option { padding: 17px; border: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 14px; }
 .extra-option:has(input:checked) { border-color: var(--green); background: #f1f7f3; }
+.extra-option label { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; }
 .extra-option strong, .extra-option span { display: block; }
 .extra-option p { margin: 5px 0 0; color: var(--muted); font-size: .84rem; }
 .extra-option > span { font-weight: 800; }
+.extra-availability { color: var(--muted); font-size: .8rem; }
+.quantity-controls { display: inline-flex !important; align-items: center; gap: 8px; }
+.quantity-controls button { min-width: 32px; min-height: 32px; border: 1px solid var(--line); border-radius: 5px; background: white; font-size: 1.1rem; }
+.quantity-controls output { min-width: 18px; text-align: center; }
+.quantity-controls small { color: var(--muted); font-size: .8rem; }
 .review-block { padding: 20px 0; border-top: 1px solid var(--line); }
 .review-block h2 { margin-top: 0; }
 .summary-list { display: grid; grid-template-columns: 160px 1fr; gap: 9px 20px; }

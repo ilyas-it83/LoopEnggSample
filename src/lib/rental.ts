@@ -51,6 +51,53 @@ export function searchVehicles(
   );
 }
 
+export function extraQuantityLimit(extraId: string): number {
+  const extra = findExtra(extraId);
+  return extra ? Math.min(extra.maxQuantity, extra.availableQuantity) : 0;
+}
+
+function extraSelectionErrors(selectedExtras: readonly SelectedExtra[]): Map<string, string> {
+  const quantities = new Map<string, number>();
+  selectedExtras.forEach((selection) => {
+    quantities.set(selection.id, (quantities.get(selection.id) ?? 0) + selection.quantity);
+  });
+
+  const errors = new Map<string, string>();
+  quantities.forEach((quantity, extraId) => {
+    const extra = findExtra(extraId);
+    if (!extra) {
+      errors.set(extraId, "This extra is not available.");
+    } else if (!Number.isInteger(quantity) || quantity < 1) {
+      errors.set(extraId, `Select at least one ${extra.name}.`);
+    } else if (extra.availableQuantity === 0) {
+      errors.set(extraId, `${extra.name} is unavailable for this rental.`);
+    } else if (quantity > extra.maxQuantity) {
+      errors.set(extraId, `${extra.name} has a limit of ${extra.maxQuantity} per rental.`);
+    } else if (quantity > extra.availableQuantity) {
+      errors.set(
+        extraId,
+        `Only ${extra.availableQuantity} ${extra.name}${extra.availableQuantity === 1 ? "" : "s"} ${extra.availableQuantity === 1 ? "is" : "are"} available for this rental.`,
+      );
+    }
+  });
+  return errors;
+}
+
+export function validateSelectedExtras(selectedExtras: readonly SelectedExtra[]): string[] {
+  return [...extraSelectionErrors(selectedExtras).values()];
+}
+
+function validSelectedExtras(selectedExtras: readonly SelectedExtra[]): SelectedExtra[] {
+  const errors = extraSelectionErrors(selectedExtras);
+  const quantities = new Map<string, number>();
+  selectedExtras.forEach((selection) => {
+    if (!errors.has(selection.id)) {
+      quantities.set(selection.id, (quantities.get(selection.id) ?? 0) + selection.quantity);
+    }
+  });
+  return [...quantities].map(([id, quantity]) => ({ id, quantity }));
+}
+
 export function validateEstimatedPriceRange(range: EstimatedPriceRange): string[] {
   const errors: string[] = [];
   if (range.min !== undefined && (!Number.isSafeInteger(range.min) || range.min < 0)) errors.push("Minimum estimated price must be a non-negative whole amount.");
@@ -125,7 +172,7 @@ export function buildQuote(
     lines.push({ id: "young-driver", label: `Young driver fee · ${days} days`, amount: 2500 * days, kind: "charge" });
   }
 
-  selectedExtras.forEach((selection) => {
+  validSelectedExtras(selectedExtras).forEach((selection) => {
     const extra = findExtra(selection.id);
     if (!extra || selection.quantity < 1) return;
     const multiplier = extra.pricingModel === "per-day" ? days : 1;

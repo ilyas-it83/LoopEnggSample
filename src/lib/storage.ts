@@ -1,6 +1,6 @@
 "use client";
 
-import { buildQuote, defaultSearch } from "./rental";
+import { buildQuote, defaultSearch, validateSelectedExtras } from "./rental";
 import { findVehicle, simulatedProfile } from "./fixtures";
 import type {
   Booking,
@@ -93,6 +93,9 @@ export function findBooking(idOrReference: string): Booking | undefined {
 }
 
 export function createBooking(draft: CheckoutDraft): Booking {
+  const extraErrors = validateSelectedExtras(draft.extras);
+  if (extraErrors.length > 0) throw new Error(extraErrors[0]);
+
   const existing = getBookings().find(
     (booking) =>
       booking.vehicleId === draft.vehicleId &&
@@ -123,6 +126,9 @@ export function createBooking(draft: CheckoutDraft): Booking {
 }
 
 export function updateBookingExtras(booking: Booking, selectedExtras: SelectedExtra[]): Booking {
+  const extraErrors = validateSelectedExtras(selectedExtras);
+  if (extraErrors.length > 0) throw new Error(extraErrors[0]);
+
   const vehicle = findVehicle(booking.vehicleId)!;
   const now = new Date().toISOString();
   const updated: Booking = {

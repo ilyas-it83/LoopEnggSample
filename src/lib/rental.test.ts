@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { findVehicle, vehicles } from "./fixtures";
+import { extras, findVehicle, vehicles } from "./fixtures";
 import {
   buildQuote,
   defaultSearch,
+  extraQuantityLimit,
   filterVehicles,
   filterVehiclesByAccessibility,
   filterVehiclesByEstimatedPrice,
@@ -10,9 +11,11 @@ import {
   promotionMessage,
   rentalDays,
   searchVehicles,
+  validateSelectedExtras,
   validateEstimatedPriceRange,
   validateSearch,
 } from "./rental";
+import type { SelectedExtra } from "./types";
 
 describe("rental search rules", () => {
   it("rejects a return before pickup", () => {
@@ -142,6 +145,40 @@ describe("rental pricing rules", () => {
     expect(quote.lines.find((line) => line.id === "base")?.amount).toBe(vehicle.dailyRate * 3);
     expect(quote.total).toBeGreaterThan(quote.subtotal);
     expect(Number.isInteger(quote.total)).toBe(true);
+  });
+
+  describe("extra quantity rules", () => {
+    const validationCases: Array<[SelectedExtra[], string[]]> = [
+      [[{ id: "child-seat", quantity: 2 }], []],
+      [[{ id: "child-seat", quantity: 3 }], ["Only 2 Child safety seats are available for this rental."]],
+      [[{ id: "additional-driver", quantity: 3 }], ["Additional driver has a limit of 2 per rental."]],
+      [[{ id: "additional-driver", quantity: 2 }], ["Only 1 Additional driver is available for this rental."]],
+      [[{ id: "gps", quantity: 1 }], ["Portable navigation is unavailable for this rental."]],
+      [[{ id: "roadside", quantity: 0 }], ["Select at least one Roadside assistance."]],
+      [[{ id: "unknown", quantity: 1 }], ["This extra is not available."]],
+    ];
+
+    it.each(extras.map((extra) => [extra.id, extra.maxQuantity, extra.availableQuantity] as const))(
+      "limits %s to the lower of its rental limit and available stock",
+      (id, maxQuantity, availableQuantity) => {
+        expect(extraQuantityLimit(id)).toBe(Math.min(maxQuantity, availableQuantity));
+      },
+    );
+
+    it.each(validationCases)("validates selected extras %#", (selectedExtras, errors) => {
+      expect(validateSelectedExtras(selectedExtras)).toEqual(errors);
+    });
+
+    it("excludes invalid extra selections from the quote", () => {
+      const quote = buildQuote(defaultSearch, findVehicle("compact-1")!, [
+        { id: "child-seat", quantity: 3 },
+        { id: "gps", quantity: 1 },
+      ]);
+
+      expect(quote.lines.map((line) => line.id)).not.toEqual(
+        expect.arrayContaining(["extra-child-seat", "extra-gps"]),
+      );
+    });
   });
 
   it("adds one-way and young-driver fees", () => {
