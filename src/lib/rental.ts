@@ -1,11 +1,13 @@
 import { extras, findExtra, MOCK_CLOCK, vehicles } from "./fixtures";
 import type {
   DemoScenario,
+  FuelType,
   Quote,
   QuoteLine,
   SearchCriteria,
   SelectedExtra,
   Vehicle,
+  VehicleCategory,
 } from "./types";
 
 export const defaultSearch: SearchCriteria = {
@@ -44,6 +46,39 @@ export function searchVehicles(
       vehicle.locationIds.includes(search.pickupLocationId) &&
       search.driverAge >= vehicle.minimumDriverAge,
   );
+}
+
+export type VehicleSort = "recommended" | "price-asc" | "price-desc" | "capacity" | "name";
+
+export interface VehicleFilters {
+  categories?: readonly VehicleCategory[];
+  fuelTypes?: readonly FuelType[];
+  minPassengers?: number;
+}
+
+export function filterAndSortVehicles(
+  availableVehicles: readonly Vehicle[],
+  filters: VehicleFilters = {},
+  sort: VehicleSort = "recommended",
+): Vehicle[] {
+  const categories = filters.categories ?? [];
+  const fuelTypes = filters.fuelTypes ?? [];
+  const minPassengers = filters.minPassengers;
+
+  return availableVehicles
+    .filter(
+      (vehicle) =>
+        (categories.length === 0 || categories.includes(vehicle.category)) &&
+        (fuelTypes.length === 0 || fuelTypes.includes(vehicle.fuelType)) &&
+        (minPassengers === undefined || vehicle.passengers >= minPassengers),
+    )
+    .sort((a, b) => {
+      if (sort === "price-asc") return a.dailyRate - b.dailyRate;
+      if (sort === "price-desc") return b.dailyRate - a.dailyRate;
+      if (sort === "capacity") return b.passengers - a.passengers;
+      if (sort === "name") return a.example.localeCompare(b.example);
+      return b.inventory - a.inventory;
+    });
 }
 
 export function buildQuote(
@@ -122,4 +157,3 @@ export function formatDateTime(value: string): string {
     minute: "2-digit",
   }).format(new Date(value));
 }
-

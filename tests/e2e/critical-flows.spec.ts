@@ -55,3 +55,21 @@ test("no-results scenario provides recovery guidance", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "No vehicles match this search" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
 });
+
+test("customer filters search results by passenger capacity", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByLabel("7+ passengers").check();
+  await expect(page.getByText("2 matching vehicles")).toBeVisible();
+  await expect(page.getByText("7 seats")).toHaveCount(2);
+  await expect(page.getByText("5 seats")).toHaveCount(0);
+});
+
+test("passenger capacity filter shows recovery when no fixture matches", async ({ page }) => {
+  await page.goto("/search");
+  await page.locator(".filter-group").filter({ hasText: "Fuel or power" }).getByLabel("Electric").check();
+  await page.getByLabel("7+ passengers").check();
+  await expect(page.getByRole("heading", { name: "No vehicles match this search" })).toBeVisible();
+  await expect(page.getByText(/Try a lower passenger capacity/)).toBeVisible();
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  await expect(page.getByText(/matching vehicles/)).toBeVisible();
+});

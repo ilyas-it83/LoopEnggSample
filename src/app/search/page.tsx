@@ -4,9 +4,10 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchForm } from "@/components/SearchForm";
 import { VehicleCard } from "@/components/VehicleCard";
-import { buildQuote, defaultSearch, searchVehicles } from "@/lib/rental";
+import { buildQuote, defaultSearch, filterAndSortVehicles, searchVehicles } from "@/lib/rental";
 import { getScenario } from "@/lib/storage";
-import type { DemoScenario, SearchCriteria, VehicleCategory } from "@/lib/types";
+import type { DemoScenario, FuelType, SearchCriteria, VehicleCategory } from "@/lib/types";
+import type { VehicleSort } from "@/lib/rental";
 
 function SearchResults() {
   const params = useSearchParams();
@@ -20,8 +21,9 @@ function SearchResults() {
   };
   const [scenario, setCurrentScenario] = useState<DemoScenario>("normal");
   const [categories, setCategories] = useState<VehicleCategory[]>([]);
-  const [fuel, setFuel] = useState<string[]>([]);
-  const [sort, setSort] = useState("recommended");
+  const [fuel, setFuel] = useState<FuelType[]>([]);
+  const [minPassengers, setMinPassengers] = useState<number | undefined>();
+  const [sort, setSort] = useState<VehicleSort>("recommended");
 
   useEffect(() => {
     const update = () => setCurrentScenario(getScenario());
@@ -30,26 +32,24 @@ function SearchResults() {
     return () => window.removeEventListener("drivewise-storage", update);
   }, []);
 
-  const results = searchVehicles(search, scenario)
-    .filter(
-      (vehicle) =>
-        (categories.length === 0 || categories.includes(vehicle.category)) &&
-        (fuel.length === 0 || fuel.includes(vehicle.fuelType)),
-    )
-    .sort((a, b) => {
-      if (sort === "price-asc") return a.dailyRate - b.dailyRate;
-      if (sort === "price-desc") return b.dailyRate - a.dailyRate;
-      if (sort === "capacity") return b.passengers - a.passengers;
-      if (sort === "name") return a.example.localeCompare(b.example);
-      return b.inventory - a.inventory;
-    });
+  const results = filterAndSortVehicles(searchVehicles(search, scenario), {
+    categories,
+    fuelTypes: fuel,
+    minPassengers,
+  }, sort);
 
   function toggleCategory(category: VehicleCategory) {
     setCategories((current) => current.includes(category) ? current.filter((item) => item !== category) : [...current, category]);
   }
 
-  function toggleFuel(value: string) {
+  function toggleFuel(value: FuelType) {
     setFuel((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
+  }
+
+  function clearFilters() {
+    setCategories([]);
+    setFuel([]);
+    setMinPassengers(undefined);
   }
 
   return (
@@ -73,17 +73,25 @@ function SearchResults() {
             </div>
             <div className="filter-group">
               <strong>Fuel or power</strong>
-              {["Petrol", "Hybrid", "Electric"].map((value) => (
+              {(["Petrol", "Hybrid", "Electric"] as FuelType[]).map((value) => (
                 <label key={value}><input type="checkbox" checked={fuel.includes(value)} onChange={() => toggleFuel(value)} /> {value}</label>
               ))}
             </div>
-            <button className="link-button" type="button" onClick={() => { setCategories([]); setFuel([]); }}>Clear all filters</button>
+            <div className="filter-group">
+              <strong id="passenger-capacity-label">Passenger capacity</strong>
+              <div role="radiogroup" aria-labelledby="passenger-capacity-label">
+                <label><input type="radio" name="passenger-capacity" checked={minPassengers === undefined} onChange={() => setMinPassengers(undefined)} /> Any capacity</label>
+                <label><input type="radio" name="passenger-capacity" checked={minPassengers === 5} onChange={() => setMinPassengers(5)} /> 5+ passengers</label>
+                <label><input type="radio" name="passenger-capacity" checked={minPassengers === 7} onChange={() => setMinPassengers(7)} /> 7+ passengers</label>
+              </div>
+            </div>
+            <button className="link-button" type="button" onClick={clearFilters}>Clear all filters</button>
           </aside>
           <section aria-live="polite">
             <div className="result-toolbar">
               <strong>{results.length} matching vehicles</strong>
               <label>Sort by{" "}
-                <select value={sort} onChange={(event) => setSort(event.target.value)}>
+                <select value={sort} onChange={(event) => setSort(event.target.value as VehicleSort)}>
                   <option value="recommended">Recommended</option>
                   <option value="price-asc">Price: low to high</option>
                   <option value="price-desc">Price: high to low</option>
@@ -95,8 +103,8 @@ function SearchResults() {
             {results.length === 0 ? (
               <div className="empty-state">
                 <h2>No vehicles match this search</h2>
-                <p>Change the dates, location, driver age, or active filters. The no-results demo scenario may also be enabled.</p>
-                <button className="button button-secondary" type="button" onClick={() => { setCategories([]); setFuel([]); }}>Clear filters</button>
+                <p>{minPassengers ? "Try a lower passenger capacity, clear filters, or change the dates, location, or driver age. The no-results demo scenario may also be enabled." : "Change the dates, location, driver age, or active filters. The no-results demo scenario may also be enabled."}</p>
+                <button className="button button-secondary" type="button" onClick={clearFilters}>Clear filters</button>
               </div>
             ) : (
               <div className="vehicle-list">
