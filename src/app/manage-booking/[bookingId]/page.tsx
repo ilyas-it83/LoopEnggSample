@@ -6,20 +6,26 @@ import { useEffect, useState } from "react";
 import { PriceBreakdown } from "@/components/PriceBreakdown";
 import { extras, findLocation, findVehicle } from "@/lib/fixtures";
 import { formatDateTime, formatMoney } from "@/lib/rental";
-import { cancelBooking, findBooking, updateBookingExtras } from "@/lib/storage";
+import { cancelBooking, findBooking, reviewBookingDateTimes, updateBookingDateTimes, updateBookingExtras } from "@/lib/storage";
 import type { Booking, SelectedExtra } from "@/lib/types";
 
 export default function ManageBookingPage() {
   const params = useParams<{ bookingId: string }>();
   const [booking, setBooking] = useState<Booking | null | undefined>(undefined);
   const [editingExtras, setEditingExtras] = useState(false);
+  const [editingDateTimes, setEditingDateTimes] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
+  const [pickupAt, setPickupAt] = useState("");
+  const [returnAt, setReturnAt] = useState("");
+  const [dateTimeErrors, setDateTimeErrors] = useState<string[]>([]);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     const found = findBooking(params.bookingId);
     setBooking(found || null);
     setSelectedExtras(found?.extras || []);
+    setPickupAt(found?.search.pickupAt || "");
+    setReturnAt(found?.search.returnAt || "");
   }, [params.bookingId]);
 
   if (booking === undefined) return <div className="content-wrap">Loading booking…</div>;
@@ -36,6 +42,32 @@ export default function ManageBookingPage() {
     setBooking(updated);
     setEditingExtras(false);
     setMessage("Optional extras updated. The mock total was recalculated.");
+  }
+
+  const dateTimeReview = editingDateTimes
+    ? reviewBookingDateTimes(booking, pickupAt, returnAt)
+    : undefined;
+
+  function startDateTimeEdit() {
+    setPickupAt(booking!.search.pickupAt);
+    setReturnAt(booking!.search.returnAt);
+    setDateTimeErrors([]);
+    setEditingDateTimes(true);
+  }
+
+  function saveDateTimes() {
+    const updated = updateBookingDateTimes(booking!, pickupAt, returnAt);
+    if (updated.errors.length) {
+      setDateTimeErrors(updated.errors);
+      return;
+    }
+    if (!updated.changed) {
+      setDateTimeErrors(["Choose a different pickup or return date-time before confirming."]);
+      return;
+    }
+    setBooking(updated.booking);
+    setEditingDateTimes(false);
+    setMessage("Rental date-times updated. The mock total was recalculated.");
   }
 
   function cancel() {
@@ -65,6 +97,21 @@ export default function ManageBookingPage() {
                 <dt>Driver</dt><dd>{booking.driver.firstName} {booking.driver.lastName}</dd>
                 <dt>Payment</dt><dd>{booking.payment.brand} ending {booking.payment.last4}</dd>
               </dl>
+              {!editingDateTimes ? (
+                <button className="button button-secondary" type="button" disabled={!canChange} onClick={startDateTimeEdit}>Modify rental date-times</button>
+              ) : (
+                <div className="form-grid" style={{ marginTop: 20 }}>
+                  <div className="field"><label htmlFor="pickup-at">Pickup date and time</label><input id="pickup-at" type="datetime-local" value={pickupAt} onChange={(event) => setPickupAt(event.target.value)} /></div>
+                  <div className="field"><label htmlFor="return-at">Return date and time</label><input id="return-at" type="datetime-local" value={returnAt} onChange={(event) => setReturnAt(event.target.value)} /></div>
+                  {dateTimeErrors.length > 0 && <div className="alert alert-error" role="alert">{dateTimeErrors.join(" ")}</div>}
+                  {dateTimeReview && !dateTimeReview.errors.length && dateTimeReview.quote && (
+                    <div className="alert alert-info" role="status">
+                      Original total: {formatMoney(booking.quote.total)}. Revised total: {formatMoney(dateTimeReview.quote.total)}. Difference: {formatMoney(dateTimeReview.quote.total - booking.quote.total)}.
+                    </div>
+                  )}
+                  <div className="form-actions"><button className="button button-secondary" type="button" onClick={() => setEditingDateTimes(false)}>Discard</button><button className="button button-primary" type="button" onClick={saveDateTimes}>Confirm date-time changes</button></div>
+                </div>
+              )}
               <h2>Optional extras</h2>
               {!editingExtras ? (
                 <>
@@ -91,4 +138,3 @@ export default function ManageBookingPage() {
     </>
   );
 }
-

@@ -1,13 +1,15 @@
 "use client";
 
-import { buildQuote, defaultSearch } from "./rental";
-import { findVehicle } from "./fixtures";
+import { buildQuote, defaultSearch, validateSearch } from "./rental";
+import { findVehicle, MOCK_CLOCK } from "./fixtures";
 import type {
   Booking,
   CheckoutDraft,
   DemoScenario,
   DriverDetails,
+  Quote,
   RenterDetails,
+  SearchCriteria,
   SelectedExtra,
 } from "./types";
 
@@ -155,6 +157,66 @@ export function updateBookingExtras(booking: Booking, selectedExtras: SelectedEx
   return updated;
 }
 
+export interface BookingDateTimeReview {
+  errors: string[];
+  search?: SearchCriteria;
+  quote?: Quote;
+  changed: boolean;
+}
+
+export function reviewBookingDateTimes(
+  booking: Booking,
+  pickupAt: string,
+  returnAt: string,
+): BookingDateTimeReview {
+  if (booking.status !== "Confirmed") {
+    return { errors: ["Only upcoming confirmed bookings can be modified."], changed: false };
+  }
+  if (getScenario() === "service-error") {
+    return { errors: ["We could not update this booking right now. Try again after resetting the demo scenario."], changed: false };
+  }
+
+  const search = { ...booking.search, pickupAt, returnAt };
+  const errors = validateSearch(search);
+  if (errors.length) return { errors, changed: false };
+
+  return {
+    errors: [],
+    search,
+    quote: buildQuote(search, findVehicle(booking.vehicleId)!, booking.extras),
+    changed: pickupAt !== booking.search.pickupAt || returnAt !== booking.search.returnAt,
+  };
+}
+
+export function updateBookingDateTimes(
+  booking: Booking,
+  pickupAt: string,
+  returnAt: string,
+): { booking: Booking; errors: string[]; changed: boolean } {
+  const review = reviewBookingDateTimes(booking, pickupAt, returnAt);
+  if (review.errors.length || !review.changed) {
+    return { booking, errors: review.errors, changed: false };
+  }
+
+  const updated: Booking = {
+    ...booking,
+    search: review.search!,
+    quote: review.quote!,
+    updatedAt: MOCK_CLOCK,
+    history: [
+      ...booking.history,
+      {
+        id: `history-date-times-${booking.history.length + 1}`,
+        action: "Modified",
+        at: MOCK_CLOCK,
+        detail: "Rental date-times were updated.",
+      },
+    ],
+  };
+  saveBooking(updated);
+  return { booking: updated, errors: [], changed: true };
+}
+
 export function cancelBooking(booking: Booking): Booking {
   if (booking.status === "Cancelled") return booking;
   const now = new Date().toISOString();
@@ -196,4 +258,3 @@ export function resetDemo(): void {
   Object.values(KEYS).forEach((key) => window.localStorage.removeItem(key));
   window.dispatchEvent(new Event("drivewise-storage"));
 }
-

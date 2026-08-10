@@ -14,3 +14,8 @@ Feature: Manage a booking
     And a zero mock cancellation fee is applied
     And the booking cannot be cancelled again
 
+  Scenario: Customer modifies eligible rental date-times
+    Given an upcoming confirmed booking
+    When the customer confirms valid new rental date-times
+    Then the itinerary and mock total are updated
+    And the booking history records the modification
