@@ -96,6 +96,7 @@ describe("extra quantity rules", () => {
     [[{ id: "child-seat", quantity: 2 }], []],
     [[{ id: "child-seat", quantity: 3 }], ["Only 2 Child safety seats are available for this rental."]],
     [[{ id: "additional-driver", quantity: 3 }], ["Additional driver has a limit of 2 per rental."]],
+    [[{ id: "additional-driver", quantity: 2 }], ["Only 1 Additional driver is available for this rental."]],
     [[{ id: "gps", quantity: 1 }], ["Portable navigation is unavailable for this rental."]],
     [[{ id: "roadside", quantity: 0 }], ["Select at least one Roadside assistance."]],
     [[{ id: "unknown", quantity: 1 }], ["This extra is not available."]],

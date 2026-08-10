@@ -69,7 +69,7 @@ function extraSelectionErrors(selectedExtras: SelectedExtra[]): Map<string, stri
     } else if (quantity > extra.maxQuantity) {
       errors.set(extraId, `${extra.name} has a limit of ${extra.maxQuantity} per rental.`);
     } else if (quantity > extra.availableQuantity) {
-      errors.set(extraId, `Only ${extra.availableQuantity} ${extra.name}s are available for this rental.`);
+      errors.set(extraId, `Only ${extra.availableQuantity} ${extra.name}${extra.availableQuantity === 1 ? "" : "s"} ${extra.availableQuantity === 1 ? "is" : "are"} available for this rental.`);
     }
   });
   return errors;

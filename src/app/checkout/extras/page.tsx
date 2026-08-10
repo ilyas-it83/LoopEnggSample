@@ -35,7 +35,7 @@ export default function ExtrasPage() {
       : selected
         ? draft!.extras.map((item) => item.id === extraId ? { ...item, quantity } : item)
         : [...draft!.extras, { id: extraId, quantity }];
-    if (extraId.startsWith("protection-") && !selected) next = next.filter((item) => !item.id.startsWith("protection-") || item.id === extraId);
+    if (extraId.startsWith("protection-") && quantity > 0 && !selected) next = next.filter((item) => !item.id.startsWith("protection-") || item.id === extraId);
     const updated = { ...draft!, extras: next };
     setDraft(updated);
     saveCheckout(updated);
