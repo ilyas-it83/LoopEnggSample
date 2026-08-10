@@ -44,7 +44,7 @@ jobs:
         with:
           pattern: ci-sweeper
           level: L2
-          sandbox: "true"
+          sandbox: "false"
           sandbox-shell: "true"
           command: |
             echo "::notice::CI failure context captured for human-guided diagnosis."
@@ -54,4 +54,3 @@ jobs:
         with:
           name: ci-sweeper-state
           path: ci-sweeper-state.md
-
