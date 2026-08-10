@@ -4,8 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchForm } from "@/components/SearchForm";
 import { VehicleCard } from "@/components/VehicleCard";
-import { buildQuote, defaultSearch, filterVehiclesByPassengerCapacity, searchVehicles } from "@/lib/rental";
-import { filterVehicles } from "@/lib/rental";
+import { buildQuote, defaultSearch, filterVehicles, filterVehiclesByPassengerCapacity, searchVehicles } from "@/lib/rental";
 import { getScenario } from "@/lib/storage";
 import type { DemoScenario, FuelType, SearchCriteria, Transmission, VehicleCategory } from "@/lib/types";
 
