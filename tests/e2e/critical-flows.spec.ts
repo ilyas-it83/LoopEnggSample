@@ -94,6 +94,29 @@ test("no-results scenario provides recovery guidance", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
 });
 
+test("customer filters available vehicles by transmission type", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByRole("checkbox", { name: "Manual" }).check();
+
+  await expect(page.getByText(/matching vehicles/)).toBeVisible();
+  const cards = page.locator(".vehicle-card");
+  await expect(cards).toHaveCount(2);
+  for (const card of await cards.all()) {
+    await expect(card).toContainText("Manual");
+    await expect(card).not.toContainText("Automatic");
+  }
+});
+
+test("unavailable transmission filter combination offers recovery", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByRole("checkbox", { name: "Luxury" }).check();
+  await page.getByRole("checkbox", { name: "Manual" }).check();
+
+  await expect(page.getByRole("heading", { name: "No vehicles match this search" })).toBeVisible();
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  await expect(page.getByText(/matching vehicles/)).toBeVisible();
+});
+
 test("customer filters results by passenger capacity", async ({ page }) => {
   await page.goto("/search");
   await page.getByLabel("Minimum passenger capacity").selectOption("5");

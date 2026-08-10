@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { findVehicle } from "./fixtures";
+import { findVehicle, vehicles } from "./fixtures";
 import {
   buildQuote,
   defaultSearch,
+  filterVehicles,
   filterVehiclesByPassengerCapacity,
   promotionMessage,
   rentalDays,
@@ -32,6 +33,23 @@ describe("rental search rules", () => {
   it("excludes vehicles above the driver's age eligibility", () => {
     const results = searchVehicles({ ...defaultSearch, driverAge: 21 });
     expect(results.every((vehicle) => vehicle.minimumDriverAge <= 21)).toBe(true);
+  });
+
+  it("filters deterministic results by transmission type", () => {
+    const available = searchVehicles(defaultSearch);
+
+    expect(filterVehicles(available, { transmissions: ["Manual"] })).toEqual(
+      expect.arrayContaining([expect.objectContaining({ transmission: "Manual" })]),
+    );
+    expect(filterVehicles(available, { transmissions: ["Automatic"] })).toEqual(
+      expect.arrayContaining([expect.objectContaining({ transmission: "Automatic" })]),
+    );
+    expect(filterVehicles(available, { transmissions: ["Manual"] }).every((vehicle) => vehicle.transmission === "Manual")).toBe(true);
+    expect(filterVehicles(available, { transmissions: ["Automatic"] }).every((vehicle) => vehicle.transmission === "Automatic")).toBe(true);
+  });
+
+  it("returns no results for an unavailable transmission and category combination", () => {
+    expect(filterVehicles(vehicles, { categories: ["Luxury"], transmissions: ["Manual"] })).toEqual([]);
   });
 
   it("filters available vehicles to the requested passenger capacity", () => {

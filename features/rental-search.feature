@@ -16,6 +16,11 @@ Feature: Search for an available rental vehicle
     Then no vehicle cards are displayed
     And recovery guidance is displayed
 
+  Scenario: Customer filters results by transmission type
+    Given available vehicles exist at "Harbor International Airport"
+    When the customer filters results by "Manual" transmission
+    Then only vehicles with "Manual" transmission are displayed
+
   Scenario: Customer filters results by passenger capacity
     Given available vehicles exist at "Harbor International Airport"
     When the customer filters for at least 7 passengers

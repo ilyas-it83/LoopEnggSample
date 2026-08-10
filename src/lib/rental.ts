@@ -1,11 +1,14 @@
 import { extras, findExtra, MOCK_CLOCK, vehicles } from "./fixtures";
 import type {
   DemoScenario,
+  FuelType,
   Quote,
   QuoteLine,
   SearchCriteria,
   SelectedExtra,
+  Transmission,
   Vehicle,
+  VehicleCategory,
 } from "./types";
 
 export const defaultSearch: SearchCriteria = {
@@ -52,6 +55,21 @@ export function filterVehiclesByPassengerCapacity(
 ): Vehicle[] {
   if (minimumPassengers === undefined) return availableVehicles;
   return availableVehicles.filter((vehicle) => vehicle.passengers >= minimumPassengers);
+}
+
+export interface VehicleFilters {
+  categories?: readonly VehicleCategory[];
+  fuelTypes?: readonly FuelType[];
+  transmissions?: readonly Transmission[];
+}
+
+export function filterVehicles(availableVehicles: readonly Vehicle[], filters: VehicleFilters): Vehicle[] {
+  return availableVehicles.filter(
+    (vehicle) =>
+      (!filters.categories?.length || filters.categories.includes(vehicle.category)) &&
+      (!filters.fuelTypes?.length || filters.fuelTypes.includes(vehicle.fuelType)) &&
+      (!filters.transmissions?.length || filters.transmissions.includes(vehicle.transmission)),
+  );
 }
 
 export function buildQuote(

@@ -4,9 +4,9 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchForm } from "@/components/SearchForm";
 import { VehicleCard } from "@/components/VehicleCard";
-import { buildQuote, defaultSearch, filterVehiclesByPassengerCapacity, searchVehicles } from "@/lib/rental";
+import { buildQuote, defaultSearch, filterVehicles, filterVehiclesByPassengerCapacity, searchVehicles } from "@/lib/rental";
 import { getScenario } from "@/lib/storage";
-import type { DemoScenario, SearchCriteria, VehicleCategory } from "@/lib/types";
+import type { DemoScenario, FuelType, SearchCriteria, Transmission, VehicleCategory } from "@/lib/types";
 
 function SearchResults() {
   const params = useSearchParams();
@@ -20,7 +20,8 @@ function SearchResults() {
   };
   const [scenario, setCurrentScenario] = useState<DemoScenario>("normal");
   const [categories, setCategories] = useState<VehicleCategory[]>([]);
-  const [fuel, setFuel] = useState<string[]>([]);
+  const [fuel, setFuel] = useState<FuelType[]>([]);
+  const [transmissions, setTransmissions] = useState<Transmission[]>([]);
   const [minimumPassengers, setMinimumPassengers] = useState<number>();
   const [sort, setSort] = useState("recommended");
 
@@ -32,12 +33,10 @@ function SearchResults() {
   }, []);
 
   const availableVehicles = searchVehicles(search, scenario);
-  const results = filterVehiclesByPassengerCapacity(availableVehicles, minimumPassengers)
-    .filter(
-      (vehicle) =>
-        (categories.length === 0 || categories.includes(vehicle.category)) &&
-        (fuel.length === 0 || fuel.includes(vehicle.fuelType)),
-    )
+  const results = filterVehicles(
+    filterVehiclesByPassengerCapacity(availableVehicles, minimumPassengers),
+    { categories, fuelTypes: fuel, transmissions },
+  )
     .sort((a, b) => {
       if (sort === "price-asc") return a.dailyRate - b.dailyRate;
       if (sort === "price-desc") return b.dailyRate - a.dailyRate;
@@ -50,8 +49,19 @@ function SearchResults() {
     setCategories((current) => current.includes(category) ? current.filter((item) => item !== category) : [...current, category]);
   }
 
-  function toggleFuel(value: string) {
+  function toggleFuel(value: FuelType) {
     setFuel((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
+  }
+
+  function toggleTransmission(value: Transmission) {
+    setTransmissions((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
+  }
+
+  function clearFilters() {
+    setCategories([]);
+    setFuel([]);
+    setTransmissions([]);
+    setMinimumPassengers(undefined);
   }
 
   return (
@@ -75,19 +85,29 @@ function SearchResults() {
             </div>
             <div className="filter-group">
               <strong>Fuel or power</strong>
-              {["Petrol", "Hybrid", "Electric"].map((value) => (
+              {(["Petrol", "Hybrid", "Electric"] as FuelType[]).map((value) => (
                 <label key={value}><input type="checkbox" checked={fuel.includes(value)} onChange={() => toggleFuel(value)} /> {value}</label>
               ))}
             </div>
             <div className="filter-group">
+              <strong>Transmission</strong>
+              {(["Automatic", "Manual"] as Transmission[]).map((value) => (
+                <label key={value} htmlFor={`transmission-${value.toLowerCase()}`}><input id={`transmission-${value.toLowerCase()}`} type="checkbox" checked={transmissions.includes(value)} onChange={() => toggleTransmission(value)} /> {value}</label>
+              ))}
+            </div>
+            <div className="filter-group">
               <label htmlFor="minimum-passengers"><strong>Minimum passenger capacity</strong></label>
-              <select id="minimum-passengers" value={minimumPassengers ?? ""} onChange={(event) => setMinimumPassengers(event.target.value ? Number(event.target.value) : undefined)}>
+              <select
+                id="minimum-passengers"
+                value={minimumPassengers ?? ""}
+                onChange={(event) => setMinimumPassengers(event.target.value ? Number(event.target.value) : undefined)}
+              >
                 <option value="">Any capacity</option>
                 <option value="5">5+ passengers</option>
                 <option value="7">7+ passengers</option>
               </select>
             </div>
-            <button className="link-button" type="button" onClick={() => { setCategories([]); setFuel([]); setMinimumPassengers(undefined); }}>Clear all filters</button>
+            <button className="link-button" type="button" onClick={clearFilters}>Clear all filters</button>
           </aside>
           <section aria-live="polite">
             {scenario !== "service-error" && (
@@ -113,7 +133,7 @@ function SearchResults() {
               <div className="empty-state">
                 <h2>No vehicles match this search</h2>
                 <p>Change the dates, location, driver age, or active filters. The no-results demo scenario may also be enabled.</p>
-                <button className="button button-secondary" type="button" onClick={() => { setCategories([]); setFuel([]); setMinimumPassengers(undefined); }}>Clear filters</button>
+                <button className="button button-secondary" type="button" onClick={clearFilters}>Clear filters</button>
               </div>
             ) : (
               <div className="vehicle-list">

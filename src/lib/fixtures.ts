@@ -43,7 +43,7 @@ const vehicleSeeds: Array<{
   rate: number;
   accent: string;
 }> = [
-  { category: "Economy", examples: ["Nissan Versa", "Kia Rio", "Mitsubishi Mirage", "Hyundai Accent"], passengers: 5, luggage: 2, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Bluetooth", "Rear camera", "USB charging"], minimumDriverAge: 21, rate: 4900, accent: "#cfe8df" },
+  { category: "Economy", examples: ["Nissan Versa", "Kia Rio", "Mitsubishi Mirage", "Hyundai Accent"], passengers: 5, luggage: 2, doors: 4, transmission: "Manual", fuelType: "Petrol", features: ["Bluetooth", "Rear camera", "USB charging"], minimumDriverAge: 21, rate: 4900, accent: "#cfe8df" },
   { category: "Compact", examples: ["Toyota Corolla", "Honda Civic", "Volkswagen Jetta", "Mazda 3"], passengers: 5, luggage: 3, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Adaptive cruise", "CarPlay", "Lane assist"], minimumDriverAge: 21, rate: 6200, accent: "#d9e8fb" },
   { category: "Midsize", examples: ["Toyota Camry", "Honda Accord", "Hyundai Sonata", "Subaru Legacy"], passengers: 5, luggage: 4, doors: 4, transmission: "Automatic", fuelType: "Hybrid", features: ["Dual-zone climate", "CarPlay", "Blind-spot alert"], minimumDriverAge: 21, rate: 7600, accent: "#f4dfc4" },
   { category: "Full-size", examples: ["Chevrolet Malibu", "Nissan Altima", "Chrysler 300", "Volkswagen Arteon"], passengers: 5, luggage: 4, doors: 4, transmission: "Automatic", fuelType: "Petrol", features: ["Premium audio", "Navigation", "Heated seats"], minimumDriverAge: 25, rate: 9100, accent: "#eadcf4" },
