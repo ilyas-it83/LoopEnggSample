@@ -14,7 +14,7 @@ test("customer searches and selects an available vehicle", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Choose this car" })).toBeVisible();
 });
 
-test("customer completes an approved mock booking", async ({ page }) => {
+test("DW-150 TDD-01: customer completes an approved mock booking", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Search cars" }).click();
   await page.getByRole("link", { name: "View deal" }).first().click();
@@ -39,6 +39,25 @@ test("customer completes an approved mock booking", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "You're ready to drive" })).toBeVisible();
   await expect(page.getByText(/DW-/)).toBeVisible();
   await expect(page.getByRole("article").getByRole("link", { name: "Manage booking" })).toBeVisible();
+});
+
+test("DW-150 TDD-02: declined mock payment prevents checkout from advancing", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Search cars" }).click();
+  await page.getByRole("link", { name: "View deal" }).first().click();
+  await page.getByRole("button", { name: "Choose this car" }).click();
+  await page.getByRole("button", { name: "Driver details" }).click();
+  await page.getByRole("button", { name: "Use simulated profile" }).click();
+  await page.getByRole("button", { name: "Mock payment" }).click();
+
+  await page.getByLabel("Cardholder name").fill("Jordan Lee");
+  await page.getByLabel("Test card number").fill("4000 0000 0000 0002");
+  await page.getByRole("button", { name: "Review booking" }).click();
+
+  await expect(page).toHaveURL(/\/checkout\/payment$/);
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Mock payment declined" }),
+  ).toContainText("Use test card 4242 4242 4242 4242");
 });
 
 test("simulated profile prefills checkout driver details", async ({ page }) => {
@@ -84,6 +103,20 @@ test("guest retrieves the seeded booking", async ({ page }) => {
   await page.getByRole("button", { name: "Find booking" }).click();
   await expect(page.getByText("DW-260820-A1B2")).toBeVisible();
   await expect(page.getByText("Rental itinerary")).toBeVisible();
+});
+
+test("DW-150 TDD-01: customer cancels an eligible booking once", async ({ page }) => {
+  await page.goto("/manage-booking");
+  await page.getByRole("button", { name: "Find booking" }).click();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Cancel booking" }).click();
+
+  await expect(page.getByRole("status")).toContainText(
+    "Booking cancelled. Mock refund estimate:",
+  );
+  await expect(page.locator(".status")).toHaveText("Cancelled");
+  await expect(page.getByRole("button", { name: "Cancel booking" })).toBeDisabled();
+  await expect(page.getByText(/cannot be modified or cancelled again/)).toBeVisible();
 });
 
 test("no-results scenario provides recovery guidance", async ({ page }) => {
