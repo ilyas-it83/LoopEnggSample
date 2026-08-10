@@ -53,8 +53,12 @@ describe("rental search rules", () => {
   });
 
   it("rejects invalid estimated price ranges", () => {
-    expect(validateEstimatedPriceRange({ min: -1 })).toContain("Minimum estimated price must be a non-negative whole amount.");
+    expect(validateEstimatedPriceRange({ min: -1, max: -2 })).toEqual([
+      "Minimum estimated price must be a non-negative whole amount.",
+      "Maximum estimated price must be a non-negative whole amount.",
+    ]);
     expect(validateEstimatedPriceRange({ min: 20000, max: 10000 })).toContain("Minimum estimated price cannot be greater than maximum estimated price.");
+    expect(filterVehiclesByEstimatedPrice(searchVehicles(defaultSearch), defaultSearch, { min: 20000, max: 10000 })).toEqual([]);
   });
 });
 

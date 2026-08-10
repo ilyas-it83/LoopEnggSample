@@ -71,5 +71,5 @@ test("customer receives recovery guidance for an invalid estimated price range",
   await page.getByRole("button", { name: "Apply price range" }).click();
 
   await expect(page.getByRole("alert")).toContainText("Minimum estimated price cannot be greater than maximum estimated price.");
-  await expect(page.getByText(/matching vehicles/)).toBeVisible();
+  await expect(page.getByText("20 matching vehicles")).toBeVisible();
 });

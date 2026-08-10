@@ -46,7 +46,10 @@ function SearchResults() {
         (categories.length === 0 || categories.includes(vehicle.category)) &&
         (fuel.length === 0 || fuel.includes(vehicle.fuelType)),
     );
-  const results = filterVehiclesByEstimatedPrice(baseResults, search, priceRange, scenario)
+  const priceFilteredResults = priceRange.min !== undefined || priceRange.max !== undefined
+    ? filterVehiclesByEstimatedPrice(baseResults, search, priceRange, scenario)
+    : baseResults;
+  const results = priceFilteredResults
     .sort((a, b) => {
       if (sort === "price-asc") return a.dailyRate - b.dailyRate;
       if (sort === "price-desc") return b.dailyRate - a.dailyRate;
@@ -65,12 +68,13 @@ function SearchResults() {
 
   function applyPriceRange() {
     const nextRange: EstimatedPriceRange = {
-      ...(minimumPrice ? { min: Number(minimumPrice) * 100 } : {}),
-      ...(maximumPrice ? { max: Number(maximumPrice) * 100 } : {}),
+      ...(minimumPrice !== "" ? { min: Number(minimumPrice) * 100 } : {}),
+      ...(maximumPrice !== "" ? { max: Number(maximumPrice) * 100 } : {}),
     };
-    const [error] = validateEstimatedPriceRange(nextRange);
-    if (error) {
-      setPriceRangeError(error);
+    const errors = validateEstimatedPriceRange(nextRange);
+    if (errors.length > 0) {
+      setPriceRange({});
+      setPriceRangeError(errors.join(" "));
       return;
     }
     setPriceRange(nextRange);
@@ -114,10 +118,10 @@ function SearchResults() {
             <form className="filter-group" onSubmit={(event) => { event.preventDefault(); applyPriceRange(); }}>
               <strong>Estimated total (USD)</strong>
               <label htmlFor="minimum-price">Minimum
-                <input id="minimum-price" type="number" min="0" step="1" inputMode="numeric" value={minimumPrice} onChange={(event) => setMinimumPrice(event.target.value)} aria-describedby={priceRangeError ? "price-range-error" : undefined} />
+                <input id="minimum-price" type="number" min="0" step="0.01" inputMode="decimal" value={minimumPrice} onChange={(event) => setMinimumPrice(event.target.value)} aria-describedby={priceRangeError ? "price-range-error" : undefined} />
               </label>
               <label htmlFor="maximum-price">Maximum
-                <input id="maximum-price" type="number" min="0" step="1" inputMode="numeric" value={maximumPrice} onChange={(event) => setMaximumPrice(event.target.value)} aria-describedby={priceRangeError ? "price-range-error" : undefined} />
+                <input id="maximum-price" type="number" min="0" step="0.01" inputMode="decimal" value={maximumPrice} onChange={(event) => setMaximumPrice(event.target.value)} aria-describedby={priceRangeError ? "price-range-error" : undefined} />
               </label>
               {priceRangeError && <p id="price-range-error" className="filter-error" role="alert">{priceRangeError} Correct the range and apply it again.</p>}
               <button className="button button-secondary button-small" type="submit">Apply price range</button>

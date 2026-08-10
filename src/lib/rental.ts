@@ -63,7 +63,7 @@ export function filterVehiclesByEstimatedPrice(
   range: EstimatedPriceRange,
   scenario: DemoScenario = "normal",
 ): Vehicle[] {
-  if (validateEstimatedPriceRange(range).length > 0) return availableVehicles;
+  if (validateEstimatedPriceRange(range).length > 0) return [];
   return availableVehicles.filter((vehicle) => {
     const total = buildQuote(search, vehicle, [], scenario).total;
     return (range.min === undefined || total >= range.min) && (range.max === undefined || total <= range.max);
