@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { PriceBreakdown } from "@/components/PriceBreakdown";
 import { findLocation, findVehicle } from "@/lib/fixtures";
-import { buildQuote, defaultSearch, formatMoney } from "@/lib/rental";
+import { buildQuote, defaultSearch, formatMoney, validateSearch } from "@/lib/rental";
 import { getScenario, saveCheckout, trackRecentlyViewed } from "@/lib/storage";
 import type { DemoScenario, SearchCriteria } from "@/lib/types";
 
@@ -30,6 +30,21 @@ function VehicleDetails() {
   }, [vehicle]);
 
   if (!vehicle) return <div className="content-wrap"><div className="empty-state"><h1>Vehicle not found</h1><Link className="button button-primary" href="/search">Return to search</Link></div></div>;
+  const hasRentalCriteria = [
+    "pickupLocationId",
+    "returnLocationId",
+    "pickupAt",
+    "returnAt",
+    "driverAge",
+  ].every((key) => query.has(key));
+  const hasValidRentalCriteria =
+    hasRentalCriteria &&
+    Boolean(findLocation(search.pickupLocationId)) &&
+    Boolean(findLocation(search.returnLocationId)) &&
+    validateSearch(search).length === 0;
+  if (!hasValidRentalCriteria) {
+    return <div className="content-wrap"><div className="empty-state"><h1>Start a rental search</h1><p>Choose valid pickup and return details before viewing a vehicle estimate.</p><Link className="button button-primary" href="/search">Enter rental details</Link></div></div>;
+  }
 
   const quote = buildQuote(search, vehicle, [], scenario);
   const unavailable = scenario === "vehicle-unavailable";

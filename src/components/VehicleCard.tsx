@@ -3,13 +3,18 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatMoney } from "@/lib/rental";
-import { getFavorites, toggleFavorite } from "@/lib/storage";
+import { getComparison, getFavorites, toggleComparison, toggleFavorite } from "@/lib/storage";
 import type { SearchCriteria, Vehicle } from "@/lib/types";
 
 export function VehicleCard({ vehicle, search, total }: { vehicle: Vehicle; search: SearchCriteria; total: number }) {
   const [favorite, setFavorite] = useState(false);
+  const [selectedForComparison, setSelectedForComparison] = useState(false);
+  const [comparisonMessage, setComparisonMessage] = useState("");
 
-  useEffect(() => setFavorite(getFavorites().includes(vehicle.id)), [vehicle.id]);
+  useEffect(() => {
+    setFavorite(getFavorites().includes(vehicle.id));
+    setSelectedForComparison(getComparison().includes(vehicle.id));
+  }, [vehicle.id]);
 
   const query = new URLSearchParams({
     pickupLocationId: search.pickupLocationId,
@@ -56,9 +61,25 @@ export function VehicleCard({ vehicle, search, total }: { vehicle: Vehicle; sear
           <Link className="button button-primary" href={`/vehicles/${vehicle.id}?${query.toString()}`}>
             View deal
           </Link>
+          <button
+            className="button button-secondary button-small"
+            type="button"
+            style={{ marginTop: 10 }}
+            onClick={() => {
+              const selected = getComparison();
+              if (!selected.includes(vehicle.id) && selected.length >= 3) {
+                setComparisonMessage("You can compare up to three vehicles. Remove a vehicle before adding another.");
+                return;
+              }
+              setSelectedForComparison(toggleComparison(vehicle.id).includes(vehicle.id));
+              setComparisonMessage("");
+            }}
+          >
+            {selectedForComparison ? "Remove from comparison" : "Add to comparison"}
+          </button>
+          {comparisonMessage && <p className="alert alert-error" role="alert">{comparisonMessage}</p>}
         </div>
       </div>
     </article>
   );
 }
-

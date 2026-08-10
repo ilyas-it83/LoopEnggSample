@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { PriceBreakdown } from "@/components/PriceBreakdown";
 import { findExtra, findLocation, findVehicle } from "@/lib/fixtures";
-import { buildQuote, formatDateTime } from "@/lib/rental";
+import { buildQuote, formatDateTime, validateSelectedExtras } from "@/lib/rental";
 import { createBooking, getCheckout, getScenario, saveCheckout } from "@/lib/storage";
 import type { CheckoutDraft } from "@/lib/types";
 
@@ -25,6 +25,11 @@ export default function ReviewPage() {
 
   function confirm() {
     if (!accepted) { setError("Accept the fictional rental terms before confirming."); return; }
+    const extraErrors = validateSelectedExtras(draft!.extras);
+    if (extraErrors.length > 0) {
+      setError(`${extraErrors[0]} Return to extras and update the selection before confirming.`);
+      return;
+    }
     if (scenario === "service-error") { setError("The mock booking service is unavailable. No booking was created."); return; }
     if (scenario === "vehicle-unavailable") { setError("The selected vehicle became unavailable. Return to search and choose another vehicle."); return; }
     if (latestQuote.total !== draft!.quote!.total && !priceAccepted) {
@@ -74,4 +79,3 @@ export default function ReviewPage() {
     </div>
   );
 }
-
