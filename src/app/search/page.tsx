@@ -68,8 +68,8 @@ function SearchResults() {
 
   function applyPriceRange() {
     const nextRange: EstimatedPriceRange = {
-      ...(minimumPrice !== "" ? { min: Number(minimumPrice) * 100 } : {}),
-      ...(maximumPrice !== "" ? { max: Number(maximumPrice) * 100 } : {}),
+      ...(minimumPrice !== "" ? { min: Math.round(Number(minimumPrice) * 100) } : {}),
+      ...(maximumPrice !== "" ? { max: Math.round(Number(maximumPrice) * 100) } : {}),
     };
     const errors = validateEstimatedPriceRange(nextRange);
     if (errors.length > 0) {
