@@ -32,6 +32,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/search">Find a car</Link>
           <Link href="/manage-booking">Manage booking</Link>
           <Link href="/favorites">Favorites {favoriteCount > 0 && <span className="count">{favoriteCount}</span>}</Link>
+          <Link href="/recently-viewed">Recently viewed</Link>
           <Link href="/help">Help</Link>
         </nav>
         <Link className="button button-small button-secondary account-button" href="/account">

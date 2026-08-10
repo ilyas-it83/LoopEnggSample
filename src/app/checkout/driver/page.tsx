@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { PriceBreakdown } from "@/components/PriceBreakdown";
-import { getCheckout, saveCheckout } from "@/lib/storage";
+import { getCheckout, getSimulatedProfile, saveCheckout } from "@/lib/storage";
 import type { CheckoutDraft, DriverDetails, RenterDetails } from "@/lib/types";
 
 const blankRenter: RenterDetails = { firstName: "", lastName: "", email: "", phone: "" };
@@ -18,15 +18,33 @@ export default function DriverPage() {
   const [driver, setDriver] = useState(blankDriver);
   const [samePerson, setSamePerson] = useState(true);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const stored = getCheckout();
     setDraft(stored);
     if (stored?.renter) setRenter(stored.renter);
     if (stored?.driver) setDriver(stored.driver);
+    setIsLoading(false);
   }, []);
 
+  if (isLoading) return <div className="content-wrap"><p role="status">Loading checkout details…</p></div>;
   if (!draft?.quote) return <div className="content-wrap"><div className="empty-state"><h1>Checkout information is missing</h1><Link className="button button-primary" href="/search">Return to search</Link></div></div>;
+
+  function prefillFromSimulatedProfile() {
+    const profile = getSimulatedProfile();
+    if (!profile) {
+      setStatus("");
+      setError("The simulated profile is unavailable. Change the scenario in Demo controls and try again.");
+      return;
+    }
+    setRenter(profile.renter);
+    setDriver(profile.driver);
+    setSamePerson(true);
+    setError("");
+    setStatus("Simulated profile details were added to checkout.");
+  }
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -49,7 +67,9 @@ export default function DriverPage() {
           <p className="eyebrow">Step 2 of 4</p><h1>Who is driving?</h1>
           <div className="alert alert-info">Use fictional information only. This demo does not need or protect real personal data.</div>
           {error && <div className="alert alert-error" role="alert" style={{ marginTop: 14 }}>{error}</div>}
+          {status && <div className="alert alert-success" role="status" style={{ marginTop: 14 }}>{status}</div>}
           <h2>Renter details</h2>
+          <button className="button button-secondary button-small" type="button" onClick={prefillFromSimulatedProfile}>Use simulated profile</button>
           <div className="form-grid">
             {(["firstName", "lastName", "email", "phone"] as const).map((key) => (
               <div className="field" key={key}><label htmlFor={`renter-${key}`}>{key.replace(/([A-Z])/g, " $1")}</label><input id={`renter-${key}`} type={key === "email" ? "email" : "text"} value={renter[key]} onChange={(event) => setRenter({ ...renter, [key]: event.target.value })} /></div>

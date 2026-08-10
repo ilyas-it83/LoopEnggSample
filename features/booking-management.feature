@@ -17,5 +17,22 @@ Feature: Manage a booking
   Scenario: Customer modifies eligible rental date-times
     Given an upcoming confirmed booking
     When the customer confirms valid new rental date-times
-    Then the itinerary and mock total are updated
-    And the booking history records the modification
+    Then the booking itinerary and price are recalculated
+    And the date-time change is recorded once in the booking history
+
+  Scenario: Customer modifies the vehicle subject to availability
+    Given a confirmed booking is eligible for modification
+    And an alternative vehicle is available for the booking's dates and location
+    When the customer selects the alternative vehicle and saves the change
+    Then the booking's vehicle is updated
+    And the price is recalculated
+    And the change is recorded in the booking history
+
+  @error
+  Scenario: Vehicle modification is blocked when the vehicle is unavailable
+    Given a confirmed booking is eligible for modification
+    And the "Vehicle unavailable" demo scenario is active
+    When the customer attempts to change the vehicle
+    Then the vehicle change is prevented
+    And an actionable recovery message is displayed
+    And the booking's original vehicle remains unchanged
