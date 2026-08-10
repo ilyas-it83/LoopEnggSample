@@ -10,7 +10,8 @@ export type VehicleCategory =
 
 export type FuelType = "Petrol" | "Hybrid" | "Electric";
 export type Transmission = "Automatic" | "Manual";
-export type AccessibilityFeature = "Hand controls" | "Wheelchair-accessible entry";
+export const ACCESSIBILITY_FEATURES = ["Hand controls", "Wheelchair-accessible entry"] as const;
+export type AccessibilityFeature = (typeof ACCESSIBILITY_FEATURES)[number];
 export type DemoScenario =
   | "normal"
   | "slow"

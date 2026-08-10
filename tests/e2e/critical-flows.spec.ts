@@ -63,6 +63,7 @@ test("customer filters results by an accessibility-related feature", async ({ pa
 
   await expect(page.getByRole("status")).toContainText("matching vehicles");
   await expect(page.getByText("Toyota Sienna")).toBeVisible();
+  await expect(page.getByText("Toyota RAV4")).toBeVisible();
   await expect(page.getByText("Toyota Corolla")).not.toBeVisible();
 
   await page.getByLabel("Hand controls").check();

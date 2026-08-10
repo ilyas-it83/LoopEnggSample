@@ -6,6 +6,7 @@ import { SearchForm } from "@/components/SearchForm";
 import { VehicleCard } from "@/components/VehicleCard";
 import { buildQuote, defaultSearch, filterVehiclesByAccessibility, searchVehicles } from "@/lib/rental";
 import { getScenario } from "@/lib/storage";
+import { ACCESSIBILITY_FEATURES } from "@/lib/types";
 import type { AccessibilityFeature, DemoScenario, SearchCriteria, VehicleCategory } from "@/lib/types";
 
 function SearchResults() {
@@ -92,7 +93,7 @@ function SearchResults() {
             </div>
             <fieldset className="filter-group">
               <legend>Accessibility features</legend>
-              {(["Hand controls", "Wheelchair-accessible entry"] as AccessibilityFeature[]).map((feature) => (
+              {ACCESSIBILITY_FEATURES.map((feature) => (
                 <label key={feature}><input type="checkbox" checked={accessibilityFeatures.includes(feature)} onChange={() => toggleAccessibilityFeature(feature)} /> {feature}</label>
               ))}
             </fieldset>
