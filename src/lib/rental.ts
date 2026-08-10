@@ -2,11 +2,14 @@ import { extras, findExtra, MOCK_CLOCK, vehicles } from "./fixtures";
 import type {
   DemoScenario,
   EstimatedPriceRange,
+  FuelType,
   Quote,
   QuoteLine,
   SearchCriteria,
   SelectedExtra,
+  Transmission,
   Vehicle,
+  VehicleCategory,
 } from "./types";
 
 export const defaultSearch: SearchCriteria = {
@@ -38,7 +41,7 @@ export function searchVehicles(
   search: SearchCriteria,
   scenario: DemoScenario = "normal",
 ): Vehicle[] {
-  if (scenario === "no-results" || validateSearch(search).length > 0) return [];
+  if (scenario === "no-results" || scenario === "service-error" || validateSearch(search).length > 0) return [];
   return vehicles.filter(
     (vehicle) =>
       vehicle.inventory > 0 &&
@@ -68,6 +71,29 @@ export function filterVehiclesByEstimatedPrice(
     const total = buildQuote(search, vehicle, [], scenario).total;
     return (range.min === undefined || total >= range.min) && (range.max === undefined || total <= range.max);
   });
+}
+
+export function filterVehiclesByPassengerCapacity(
+  availableVehicles: Vehicle[],
+  minimumPassengers?: number,
+): Vehicle[] {
+  if (minimumPassengers === undefined) return availableVehicles;
+  return availableVehicles.filter((vehicle) => vehicle.passengers >= minimumPassengers);
+}
+
+export interface VehicleFilters {
+  categories?: readonly VehicleCategory[];
+  fuelTypes?: readonly FuelType[];
+  transmissions?: readonly Transmission[];
+}
+
+export function filterVehicles(availableVehicles: readonly Vehicle[], filters: VehicleFilters): Vehicle[] {
+  return availableVehicles.filter(
+    (vehicle) =>
+      (!filters.categories?.length || filters.categories.includes(vehicle.category)) &&
+      (!filters.fuelTypes?.length || filters.fuelTypes.includes(vehicle.fuelType)) &&
+      (!filters.transmissions?.length || filters.transmissions.includes(vehicle.transmission)),
+  );
 }
 
 export function buildQuote(

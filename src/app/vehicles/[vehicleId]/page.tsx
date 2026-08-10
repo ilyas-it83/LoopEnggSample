@@ -6,7 +6,7 @@ import { Suspense, useEffect, useState } from "react";
 import { PriceBreakdown } from "@/components/PriceBreakdown";
 import { findLocation, findVehicle } from "@/lib/fixtures";
 import { buildQuote, defaultSearch, formatMoney } from "@/lib/rental";
-import { getScenario, saveCheckout } from "@/lib/storage";
+import { getScenario, saveCheckout, trackRecentlyViewed } from "@/lib/storage";
 import type { DemoScenario, SearchCriteria } from "@/lib/types";
 
 function VehicleDetails() {
@@ -25,6 +25,10 @@ function VehicleDetails() {
     driverAge: Number(query.get("driverAge") || defaultSearch.driverAge),
     promoCode: query.get("promoCode") || undefined,
   };
+  useEffect(() => {
+    if (vehicle) trackRecentlyViewed(vehicle.id);
+  }, [vehicle]);
+
   if (!vehicle) return <div className="content-wrap"><div className="empty-state"><h1>Vehicle not found</h1><Link className="button button-primary" href="/search">Return to search</Link></div></div>;
 
   const quote = buildQuote(search, vehicle, [], scenario);
@@ -80,4 +84,3 @@ function VehicleDetails() {
 export default function VehiclePage() {
   return <Suspense fallback={<div className="content-wrap">Loading vehicle…</div>}><VehicleDetails /></Suspense>;
 }
-
