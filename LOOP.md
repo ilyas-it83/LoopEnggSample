@@ -11,6 +11,7 @@
 | Dependency sweeper | Every six hours | L2 | Generate dependency reports on an ephemeral runner |
 | Post-merge cleanup | Main push and nightly | L1 | Report cleanup signals |
 | Changelog drafter | Daily | L1 | Draft release notes for human review |
+| Copilot assignment | On `copilot-ready` label | Human gate | Start one coding-agent task |
 
 ## Safety gates
 
@@ -21,6 +22,8 @@
 - A third failed attempt or repeated error escalates to a human.
 - GitHub access is least privilege and limited by each workflow's
   `permissions` block. No MCP connector is required.
+- Applying `copilot-ready` is explicit human approval to assign one open
+  `user-story` issue to Copilot. Bulk assignment is not permitted.
 
 ## Budget and circuit breaker
 

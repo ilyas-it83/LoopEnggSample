@@ -1,0 +1,97 @@
+name: Assign Issue to Copilot
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Open issue number to assign to Copilot
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: copilot-assignment-${{ github.event.issue.number || inputs.issue_number }}
+  cancel-in-progress: false
+
+jobs:
+  assign:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.label.name == 'copilot-ready'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate and assign Copilot
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.COPILOT_ASSIGNMENT_TOKEN }}
+          script: |
+            const issueNumber = Number(
+              context.eventName === "workflow_dispatch"
+                ? context.payload.inputs.issue_number
+                : context.issue.number,
+            );
+
+            const { owner, repo } = context.repo;
+            const { data: issue } = await github.rest.issues.get({
+              owner,
+              repo,
+              issue_number: issueNumber,
+            });
+
+            if (issue.pull_request) {
+              core.setFailed(`#${issueNumber} is a pull request, not an issue.`);
+              return;
+            }
+            if (issue.state !== "open") {
+              core.setFailed(`#${issueNumber} is not open.`);
+              return;
+            }
+
+            const labels = issue.labels.map((label) =>
+              typeof label === "string" ? label : label.name,
+            );
+            if (!labels.includes("user-story")) {
+              core.setFailed(
+                `#${issueNumber} is missing the required user-story label.`,
+              );
+              return;
+            }
+            if (!labels.includes("copilot-ready")) {
+              core.setFailed(
+                `#${issueNumber} requires the copilot-ready human-approval label.`,
+              );
+              return;
+            }
+
+            const assignees = issue.assignees?.map((assignee) =>
+              assignee.login.toLowerCase(),
+            ) ?? [];
+            if (assignees.includes("copilot")) {
+              core.notice(`#${issueNumber} is already assigned to Copilot.`);
+              return;
+            }
+
+            await github.rest.issues.addAssignees({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              assignees: ["Copilot"],
+            });
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              labels: ["copilot-assigned"],
+            });
+
+            core.notice(
+              `Assigned issue #${issueNumber} to GitHub Copilot coding agent.`,
+            );
+

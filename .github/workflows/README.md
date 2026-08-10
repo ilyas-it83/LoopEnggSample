@@ -6,6 +6,7 @@ Next.js demo.
 
 | Workflow | Trigger | Mode |
 | --- | --- | --- |
+| Assign Issue to Copilot | `copilot-ready` label, manual | Starts one approved coding-agent task |
 | CI | Push, pull request, manual | Type, lint, unit, build, and browser tests |
 | Changelog Drafter | Daily, manual | Produces a release-notes artifact |
 | CI Sweeper | Failed CI, manual | L2 report on an ephemeral runner |
@@ -20,3 +21,8 @@ human gates, and no automatic merge or production write access. The upstream
 example requests `loop-sandbox`, but that package is not published in npm;
 these two report-only workflows therefore run directly on disposable GitHub
 runners and upload only review artifacts.
+
+Copilot assignment requires the `COPILOT_ASSIGNMENT_TOKEN` repository secret.
+Only open issues carrying both `user-story` and the human-applied
+`copilot-ready` label are eligible. The workflow adds `copilot-assigned` after
+successful assignment and is idempotent when Copilot is already assigned.
