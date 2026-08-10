@@ -27,6 +27,14 @@ Install the Playwright Chromium browser once before the first end-to-end run:
 npx playwright install chromium
 ```
 
+## Living specifications
+
+Tagged Gherkin specifications live in [`features`](features) and map to executable Vitest or Playwright coverage. Run the DW-149 traceability and validation checks with:
+
+```bash
+npm test -- src/lib/living-specifications.test.ts
+```
+
 ## Demo data
 
 - Seed booking: `DW-260820-A1B2`
