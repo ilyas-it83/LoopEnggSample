@@ -212,6 +212,10 @@ export function reviewBookingDateTimes(
   ) {
     return { errors: ["Only upcoming confirmed bookings can be modified."], changed: false };
   }
+  const changed = pickupAt !== booking.search.pickupAt || returnAt !== booking.search.returnAt;
+  if (!changed) {
+    return { errors: [], changed: false };
+  }
   if (scenario === "service-error") {
     return {
       errors: ["We could not update this booking right now. Try again after resetting the demo scenario."],
@@ -239,7 +243,7 @@ export function reviewBookingDateTimes(
     errors: [],
     search,
     quote: buildQuote(search, vehicle, booking.extras, scenario),
-    changed: pickupAt !== booking.search.pickupAt || returnAt !== booking.search.returnAt,
+    changed: true,
   };
 }
 

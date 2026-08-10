@@ -62,6 +62,7 @@ describe("recently viewed vehicles", () => {
         updated,
         updated.search.pickupAt,
         updated.search.returnAt,
+        "service-error",
       );
       expect(repeated.changed).toBe(false);
       expect(repeated.errors).toEqual([]);
