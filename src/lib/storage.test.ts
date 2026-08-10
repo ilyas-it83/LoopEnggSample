@@ -167,10 +167,7 @@ describe("booking vehicle modification", () => {
       expect(updated.quote.lines.find((line) => line.id === "base")?.amount)
         .toBe(nextVehicle.dailyRate * updated.quote.days);
       expect(updated.history.at(-1)).toMatchObject({ action: "Vehicle changed" });
-});
-
-describe("recently viewed vehicle recovery", () => {
-    beforeEach(() => window.localStorage.clear());
+    });
 
     it("keeps scenario-adjusted pricing across vehicle and extra updates", () => {
       const [booking] = getBookings();
@@ -198,7 +195,10 @@ describe("recently viewed vehicle recovery", () => {
         "midsize-1",
       )).toThrow(/only confirmed bookings/i);
     });
-  });
+});
+
+describe("recently viewed vehicle recovery", () => {
+  beforeEach(() => window.localStorage.clear());
 
   it("rejects an unknown vehicle without changing existing history", () => {
     trackRecentlyViewed("compact-1");
