@@ -4,7 +4,8 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchForm } from "@/components/SearchForm";
 import { VehicleCard } from "@/components/VehicleCard";
-import { buildQuote, defaultSearch, filterVehicles, searchVehicles } from "@/lib/rental";
+import { buildQuote, defaultSearch, filterVehiclesByPassengerCapacity, searchVehicles } from "@/lib/rental";
+import { filterVehicles } from "@/lib/rental";
 import { getScenario } from "@/lib/storage";
 import type { DemoScenario, FuelType, SearchCriteria, Transmission, VehicleCategory } from "@/lib/types";
 
@@ -22,6 +23,7 @@ function SearchResults() {
   const [categories, setCategories] = useState<VehicleCategory[]>([]);
   const [fuel, setFuel] = useState<FuelType[]>([]);
   const [transmissions, setTransmissions] = useState<Transmission[]>([]);
+  const [minimumPassengers, setMinimumPassengers] = useState<number>();
   const [sort, setSort] = useState("recommended");
 
   useEffect(() => {
@@ -31,7 +33,11 @@ function SearchResults() {
     return () => window.removeEventListener("drivewise-storage", update);
   }, []);
 
-  const results = filterVehicles(searchVehicles(search, scenario), { categories, fuelTypes: fuel, transmissions })
+  const availableVehicles = searchVehicles(search, scenario);
+  const results = filterVehicles(
+    filterVehiclesByPassengerCapacity(availableVehicles, minimumPassengers),
+    { categories, fuelTypes: fuel, transmissions },
+  )
     .sort((a, b) => {
       if (sort === "price-asc") return a.dailyRate - b.dailyRate;
       if (sort === "price-desc") return b.dailyRate - a.dailyRate;
@@ -56,6 +62,7 @@ function SearchResults() {
     setCategories([]);
     setFuel([]);
     setTransmissions([]);
+    setMinimumPassengers(undefined);
   }
 
   return (
@@ -89,22 +96,41 @@ function SearchResults() {
                 <label key={value} htmlFor={`transmission-${value.toLowerCase()}`}><input id={`transmission-${value.toLowerCase()}`} type="checkbox" checked={transmissions.includes(value)} onChange={() => toggleTransmission(value)} /> {value}</label>
               ))}
             </div>
+            <div className="filter-group">
+              <label htmlFor="minimum-passengers"><strong>Minimum passenger capacity</strong></label>
+              <select
+                id="minimum-passengers"
+                value={minimumPassengers ?? ""}
+                onChange={(event) => setMinimumPassengers(event.target.value ? Number(event.target.value) : undefined)}
+              >
+                <option value="">Any capacity</option>
+                <option value="5">5+ passengers</option>
+                <option value="7">7+ passengers</option>
+              </select>
+            </div>
             <button className="link-button" type="button" onClick={clearFilters}>Clear all filters</button>
           </aside>
           <section aria-live="polite">
-            <div className="result-toolbar">
-              <strong>{results.length} matching vehicles</strong>
-              <label>Sort by{" "}
-                <select value={sort} onChange={(event) => setSort(event.target.value)}>
-                  <option value="recommended">Recommended</option>
-                  <option value="price-asc">Price: low to high</option>
-                  <option value="price-desc">Price: high to low</option>
-                  <option value="capacity">Passenger capacity</option>
-                  <option value="name">Vehicle name</option>
-                </select>
-              </label>
-            </div>
-            {results.length === 0 ? (
+            {scenario !== "service-error" && (
+              <div className="result-toolbar">
+                <strong>{results.length} matching vehicles</strong>
+                <label>Sort by{" "}
+                  <select value={sort} onChange={(event) => setSort(event.target.value)}>
+                    <option value="recommended">Recommended</option>
+                    <option value="price-asc">Price: low to high</option>
+                    <option value="price-desc">Price: high to low</option>
+                    <option value="capacity">Passenger capacity</option>
+                    <option value="name">Vehicle name</option>
+                  </select>
+                </label>
+              </div>
+            )}
+            {scenario === "service-error" ? (
+              <div className="empty-state">
+                <h2>Vehicle results are unavailable</h2>
+                <p>The mock vehicle service is unavailable. Choose the Normal scenario in Demo controls and retry your search.</p>
+              </div>
+            ) : results.length === 0 ? (
               <div className="empty-state">
                 <h2>No vehicles match this search</h2>
                 <p>Change the dates, location, driver age, or active filters. The no-results demo scenario may also be enabled.</p>
