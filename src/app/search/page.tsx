@@ -4,9 +4,24 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchForm } from "@/components/SearchForm";
 import { VehicleCard } from "@/components/VehicleCard";
-import { buildQuote, defaultSearch, filterVehicles, filterVehiclesByPassengerCapacity, searchVehicles } from "@/lib/rental";
+import {
+  buildQuote,
+  defaultSearch,
+  filterVehicles,
+  filterVehiclesByEstimatedPrice,
+  filterVehiclesByPassengerCapacity,
+  searchVehicles,
+  validateEstimatedPriceRange,
+} from "@/lib/rental";
 import { getScenario } from "@/lib/storage";
-import type { DemoScenario, FuelType, SearchCriteria, Transmission, VehicleCategory } from "@/lib/types";
+import type {
+  DemoScenario,
+  EstimatedPriceRange,
+  FuelType,
+  SearchCriteria,
+  Transmission,
+  VehicleCategory,
+} from "@/lib/types";
 
 function SearchResults() {
   const params = useSearchParams();
@@ -24,6 +39,10 @@ function SearchResults() {
   const [transmissions, setTransmissions] = useState<Transmission[]>([]);
   const [minimumPassengers, setMinimumPassengers] = useState<number>();
   const [sort, setSort] = useState("recommended");
+  const [minimumPrice, setMinimumPrice] = useState("");
+  const [maximumPrice, setMaximumPrice] = useState("");
+  const [priceRange, setPriceRange] = useState<EstimatedPriceRange>({});
+  const [priceRangeError, setPriceRangeError] = useState("");
 
   useEffect(() => {
     const update = () => setCurrentScenario(getScenario());
@@ -33,10 +52,14 @@ function SearchResults() {
   }, []);
 
   const availableVehicles = searchVehicles(search, scenario);
-  const results = filterVehicles(
+  const baseResults = filterVehicles(
     filterVehiclesByPassengerCapacity(availableVehicles, minimumPassengers),
     { categories, fuelTypes: fuel, transmissions },
-  )
+  );
+  const priceFilteredResults = priceRange.min !== undefined || priceRange.max !== undefined
+    ? filterVehiclesByEstimatedPrice(baseResults, search, priceRange, scenario)
+    : baseResults;
+  const results = priceFilteredResults
     .sort((a, b) => {
       if (sort === "price-asc") return a.dailyRate - b.dailyRate;
       if (sort === "price-desc") return b.dailyRate - a.dailyRate;
@@ -57,11 +80,30 @@ function SearchResults() {
     setTransmissions((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
   }
 
+  function applyPriceRange() {
+    const nextRange: EstimatedPriceRange = {
+      ...(minimumPrice !== "" ? { min: Math.round(Number(minimumPrice) * 100) } : {}),
+      ...(maximumPrice !== "" ? { max: Math.round(Number(maximumPrice) * 100) } : {}),
+    };
+    const errors = validateEstimatedPriceRange(nextRange);
+    if (errors.length > 0) {
+      setPriceRange({});
+      setPriceRangeError(errors.join(" "));
+      return;
+    }
+    setPriceRange(nextRange);
+    setPriceRangeError("");
+  }
+
   function clearFilters() {
     setCategories([]);
     setFuel([]);
     setTransmissions([]);
     setMinimumPassengers(undefined);
+    setMinimumPrice("");
+    setMaximumPrice("");
+    setPriceRange({});
+    setPriceRangeError("");
   }
 
   return (
@@ -107,6 +149,17 @@ function SearchResults() {
                 <option value="7">7+ passengers</option>
               </select>
             </div>
+            <form className="filter-group" onSubmit={(event) => { event.preventDefault(); applyPriceRange(); }}>
+              <strong>Estimated total (USD)</strong>
+              <label htmlFor="minimum-price">Minimum
+                <input id="minimum-price" type="number" min="0" step="0.01" inputMode="decimal" value={minimumPrice} onChange={(event) => setMinimumPrice(event.target.value)} aria-describedby={priceRangeError ? "price-range-error" : undefined} aria-invalid={priceRangeError ? true : undefined} aria-errormessage={priceRangeError ? "price-range-error" : undefined} />
+              </label>
+              <label htmlFor="maximum-price">Maximum
+                <input id="maximum-price" type="number" min="0" step="0.01" inputMode="decimal" value={maximumPrice} onChange={(event) => setMaximumPrice(event.target.value)} aria-describedby={priceRangeError ? "price-range-error" : undefined} aria-invalid={priceRangeError ? true : undefined} aria-errormessage={priceRangeError ? "price-range-error" : undefined} />
+              </label>
+              {priceRangeError && <p id="price-range-error" className="filter-error" role="alert">{priceRangeError} Correct the range and apply it again.</p>}
+              <button className="button button-secondary button-small" type="submit">Apply price range</button>
+            </form>
             <button className="link-button" type="button" onClick={clearFilters}>Clear all filters</button>
           </aside>
           <section aria-live="polite">

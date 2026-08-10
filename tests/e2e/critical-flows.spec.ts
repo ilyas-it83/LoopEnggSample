@@ -94,6 +94,30 @@ test("no-results scenario provides recovery guidance", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
 });
 
+test("customer filters vehicles by estimated price range", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByLabel("Maximum", { exact: true }).fill("200");
+  await page.getByRole("button", { name: "Apply price range" }).click();
+
+  await expect(page.getByText("2 matching vehicles")).toBeVisible();
+});
+
+test("customer receives recovery guidance for an invalid estimated price range", async ({ page }) => {
+  await page.goto("/search");
+  const count = page.getByText(/matching vehicles/);
+  const baseline = await count.textContent();
+  expect(baseline).toBeTruthy();
+
+  await page.getByLabel("Minimum", { exact: true }).fill("200");
+  await page.getByLabel("Maximum", { exact: true }).fill("100");
+  await page.getByRole("button", { name: "Apply price range" }).click();
+
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Minimum estimated price cannot be greater than maximum estimated price." }),
+  ).toBeVisible();
+  await expect(count).toHaveText(baseline!);
+});
+
 test("customer filters available vehicles by transmission type", async ({ page }) => {
   await page.goto("/search");
   await page.getByRole("checkbox", { name: "Manual" }).check();

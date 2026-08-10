@@ -55,6 +55,11 @@ export interface SearchCriteria {
   promoCode?: string;
 }
 
+export interface EstimatedPriceRange {
+  min?: number;
+  max?: number;
+}
+
 export interface Extra {
   id: string;
   name: string;
