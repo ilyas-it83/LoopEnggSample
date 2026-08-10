@@ -67,7 +67,7 @@ export function VehicleCard({ vehicle, search, total }: { vehicle: Vehicle; sear
             style={{ marginTop: 10 }}
             onClick={() => {
               const selected = getComparison();
-              if (!selectedForComparison && selected.length >= 3) {
+              if (!selected.includes(vehicle.id) && selected.length >= 3) {
                 setComparisonMessage("You can compare up to three vehicles. Remove a vehicle before adding another.");
                 return;
               }

@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { buildComparison } from "@/lib/comparison";
 import { findVehicle } from "@/lib/fixtures";
 import { defaultSearch } from "@/lib/rental";
-import type { SearchCriteria } from "@/lib/types";
+import type { SearchCriteria, Vehicle } from "@/lib/types";
 
 function ComparisonPageContent() {
   const params = useSearchParams();
@@ -24,9 +24,9 @@ function ComparisonPageContent() {
   if (selectedVehicles.some((vehicle) => !vehicle)) {
     return <ComparisonError message="One or more selected vehicles are no longer available in the demo fixtures." />;
   }
+  const vehicles = selectedVehicles as Vehicle[];
 
   try {
-    const vehicles = selectedVehicles.filter((vehicle) => vehicle !== undefined);
     const comparison = buildComparison(search, vehicles);
     return (
       <>
@@ -36,8 +36,8 @@ function ComparisonPageContent() {
           <p>Aligned characteristics and deterministic estimates for your active rental search.</p>
         </section>
         <div className="content-wrap">
-          <div className="table-wrap" tabIndex={0} aria-label="Vehicle comparison matrix">
-            <table>
+          <div className="table-wrap" tabIndex={0}>
+            <table aria-label="Vehicle comparison matrix">
               <caption className="sr-only">Comparison of selected vehicles</caption>
               <thead>
                 <tr>
