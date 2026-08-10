@@ -1,6 +1,23 @@
-import type { Extra, RentalLocation, Vehicle, VehicleCategory } from "./types";
+import type { Extra, RentalLocation, SimulatedProfile, Vehicle, VehicleCategory } from "./types";
 
 export const MOCK_CLOCK = "2026-08-10T10:00";
+
+export const simulatedProfile: SimulatedProfile = {
+  renter: {
+    firstName: "Jordan",
+    lastName: "Lee",
+    email: "jordan.lee@example.test",
+    phone: "+1 555 010 2026",
+  },
+  driver: {
+    firstName: "Jordan",
+    lastName: "Lee",
+    dateOfBirth: "1990-04-18",
+    licenseNumber: "DEMO-48291",
+    licenseCountry: "United States",
+    licenseExpiry: "2029-04-18",
+  },
+};
 
 export const locations: RentalLocation[] = [
   { id: "harbor-airport", name: "Harbor International Airport", city: "Harbor City", type: "Airport", address: "1 Terminal Way", timezone: "America/New_York" },
@@ -71,4 +88,3 @@ export const extras: Extra[] = [
 export const findLocation = (id: string) => locations.find((location) => location.id === id);
 export const findVehicle = (id: string) => vehicles.find((vehicle) => vehicle.id === id);
 export const findExtra = (id: string) => extras.find((extra) => extra.id === id);
-

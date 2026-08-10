@@ -1,14 +1,13 @@
 "use client";
 
 import { buildQuote, defaultSearch } from "./rental";
-import { findVehicle } from "./fixtures";
+import { findVehicle, simulatedProfile } from "./fixtures";
 import type {
   Booking,
   CheckoutDraft,
   DemoScenario,
-  DriverDetails,
-  RenterDetails,
   SelectedExtra,
+  SimulatedProfile,
 } from "./types";
 
 const KEYS = {
@@ -16,22 +15,6 @@ const KEYS = {
   bookings: "drivewise.bookings",
   favorites: "drivewise.favorites",
   scenario: "drivewise.scenario",
-};
-
-const demoRenter: RenterDetails = {
-  firstName: "Jordan",
-  lastName: "Lee",
-  email: "jordan.lee@example.test",
-  phone: "+1 555 010 2026",
-};
-
-const demoDriver: DriverDetails = {
-  firstName: "Jordan",
-  lastName: "Lee",
-  dateOfBirth: "1990-04-18",
-  licenseNumber: "DEMO-48291",
-  licenseCountry: "United States",
-  licenseExpiry: "2029-04-18",
 };
 
 function seedBooking(): Booking {
@@ -48,8 +31,8 @@ function seedBooking(): Booking {
     search,
     vehicleId: vehicle.id,
     extras: [{ id: "protection-basic", quantity: 1 }],
-    renter: demoRenter,
-    driver: demoDriver,
+    renter: simulatedProfile.renter,
+    driver: simulatedProfile.driver,
     quote: buildQuote(search, vehicle, [{ id: "protection-basic", quantity: 1 }]),
     payment: { brand: "Visa", last4: "4242" },
     createdAt: "2026-08-01T12:00:00.000Z",
@@ -188,6 +171,10 @@ export function getScenario(): DemoScenario {
   return read<DemoScenario>(KEYS.scenario, "normal");
 }
 
+export function getSimulatedProfile(): SimulatedProfile | null {
+  return getScenario() === "service-error" ? null : simulatedProfile;
+}
+
 export function setScenario(scenario: DemoScenario): void {
   write(KEYS.scenario, scenario);
 }
@@ -196,4 +183,3 @@ export function resetDemo(): void {
   Object.values(KEYS).forEach((key) => window.localStorage.removeItem(key));
   window.dispatchEvent(new Event("drivewise-storage"));
 }
-

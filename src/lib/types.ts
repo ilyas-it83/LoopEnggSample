@@ -101,6 +101,11 @@ export interface DriverDetails {
   licenseExpiry: string;
 }
 
+export interface SimulatedProfile {
+  renter: RenterDetails;
+  driver: DriverDetails;
+}
+
 export interface PaymentSummary {
   brand: string;
   last4: string;
@@ -141,4 +146,3 @@ export interface CheckoutDraft {
   quote?: Quote;
   termsAccepted?: boolean;
 }
-
