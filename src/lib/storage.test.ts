@@ -45,6 +45,6 @@ describe("updateBookingVehicle", () => {
     const nextVehicle = findVehicle("midsize-1")!;
     const cancelled = { ...booking, status: "Cancelled" as const };
 
-    expect(() => updateBookingVehicle(cancelled, nextVehicle.id)).toThrow(/cannot be modified/i);
+    expect(() => updateBookingVehicle(cancelled, nextVehicle.id)).toThrow(/only confirmed bookings/i);
   });
 });

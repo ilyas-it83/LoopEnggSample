@@ -157,7 +157,7 @@ export function updateBookingExtras(booking: Booking, selectedExtras: SelectedEx
 
 export function updateBookingVehicle(booking: Booking, vehicleId: string, scenario: DemoScenario = "normal"): Booking {
   if (booking.status !== "Confirmed") {
-    throw new Error("Cancelled, active, and completed bookings cannot be modified.");
+    throw new Error("Only confirmed bookings can have their vehicle changed.");
   }
   const vehicle = findVehicle(vehicleId);
   if (!vehicle) {

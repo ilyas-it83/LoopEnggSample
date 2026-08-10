@@ -66,7 +66,7 @@ export default function ManageBookingPage() {
       const updated = updateBookingVehicle(booking!, selectedVehicleId, scenario);
       setBooking(updated);
       setEditingVehicle(false);
-      setMessage(`Vehicle updated to ${findVehicle(selectedVehicleId)!.example}. The mock total was recalculated.`);
+      setMessage(`Vehicle updated to ${findVehicle(updated.vehicleId)?.example ?? "the selected vehicle"}. The mock total was recalculated.`);
     } catch (error) {
       setVehicleError(error instanceof Error ? error.message : "This vehicle could not be selected.");
     }
