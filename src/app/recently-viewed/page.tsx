@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { VehicleCard } from "@/components/VehicleCard";
-import { findVehicle } from "@/lib/fixtures";
+import { vehicles as fixtureVehicles } from "@/lib/fixtures";
 import { buildQuote, defaultSearch } from "@/lib/rental";
 import { getRecentlyViewed } from "@/lib/storage";
+
+const vehiclesById = new Map(fixtureVehicles.map((vehicle) => [vehicle.id, vehicle]));
 
 export default function RecentlyViewedPage() {
   const [vehicleIds, setVehicleIds] = useState<string[] | null>(null);
@@ -17,10 +19,7 @@ export default function RecentlyViewedPage() {
     return () => window.removeEventListener("drivewise-storage", update);
   }, []);
 
-  const vehicles = vehicleIds?.flatMap((id) => {
-    const vehicle = findVehicle(id);
-    return vehicle ? [vehicle] : [];
-  });
+  const vehicles = vehicleIds?.map((id) => vehiclesById.get(id)!);
 
   return (
     <>
