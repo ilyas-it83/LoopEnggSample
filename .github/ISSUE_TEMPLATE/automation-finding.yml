@@ -1,0 +1,20 @@
+name: Automation finding
+description: Record a loop finding for human review
+title: "[Automation] "
+labels: ["automation"]
+body:
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Include the workflow, run URL, and observed behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: Proposed next action
+      description: No automated merge or protected-path change is implied.
+    validations:
+      required: true
+

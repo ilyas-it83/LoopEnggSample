@@ -1,0 +1,50 @@
+name: Changelog Drafter
+
+on:
+  schedule:
+    - cron: "30 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Draft release notes from recent commits
+        run: |
+          {
+            echo "# Drivewise Release Notes Draft"
+            echo
+            echo "Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo
+            echo "## Recent changes"
+            git log --pretty='- %s (%h)' -20
+          } > RELEASE_NOTES_DRAFT.md
+
+      - name: Record drafter state
+        run: |
+          {
+            echo "# Changelog Drafter State"
+            echo
+            echo "Last run: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "Outcome: draft generated for human review"
+          } > changelog-drafter-state.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: changelog-draft
+          path: |
+            RELEASE_NOTES_DRAFT.md
+            changelog-drafter-state.md
+

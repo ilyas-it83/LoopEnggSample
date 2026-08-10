@@ -1,0 +1,47 @@
+name: Post-Merge Cleanup Loop
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  cleanup-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 50
+
+      - name: List recent changes
+        run: git log --merges -10 --oneline || git log -10 --oneline
+
+      - name: Scan for cleanup signals
+        run: |
+          if git rev-parse HEAD~5 >/dev/null 2>&1; then
+            git diff HEAD~5..HEAD | grep -E 'TODO|FIXME|remove after|deprecated' || true
+          else
+            git grep -n -E 'TODO|FIXME|remove after|deprecated' -- ':!package-lock.json' || true
+          fi
+
+      - name: Record cleanup state
+        run: |
+          {
+            echo
+            echo "## $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "- Recent changes scanned for cleanup signals."
+            echo "- Findings require human review before code changes."
+          } >> post-merge-state.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: post-merge-state
+          path: post-merge-state.md
+

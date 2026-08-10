@@ -1,0 +1,37 @@
+patterns:
+  - id: daily-triage
+    cadence: 1d
+    risk: low
+    state: STATE.md
+    level: L1
+  - id: issue-triage
+    cadence: 2h
+    risk: low
+    state: issue-triage-state.md
+    level: L1
+  - id: pr-babysitter
+    cadence: 15m
+    risk: low
+    state: pr-babysitter-state.md
+    level: L1
+  - id: ci-sweeper
+    cadence: event
+    risk: medium
+    state: ci-sweeper-state.md
+    level: L2
+  - id: dependency-sweeper
+    cadence: 6h
+    risk: medium
+    state: dependency-sweeper-state.md
+    level: L2
+  - id: post-merge-cleanup
+    cadence: 1d
+    risk: low
+    state: post-merge-state.md
+    level: L1
+  - id: changelog-drafter
+    cadence: 1d
+    risk: low
+    state: changelog-drafter-state.md
+    level: L1
+

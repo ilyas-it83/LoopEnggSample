@@ -1,0 +1,44 @@
+name: Daily Triage Loop
+
+on:
+  schedule:
+    - cron: "0 8 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  checks: read
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Gather CI context
+        run: gh run list --limit 10 --json conclusion,name,headBranch,createdAt
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Invoke Daily Triage loop
+        uses: cobusgreyling/loop-engineering/tools/loop-action@main
+        with:
+          pattern: daily-triage
+          level: L1
+          sandbox-shell: "true"
+          command: |
+            {
+              echo
+              echo "## $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              echo "- Daily GitHub and CI context gathered."
+              echo "- Mode: report-only; human review required for actions."
+            } >> STATE.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: loop-state
+          path: STATE.md
+

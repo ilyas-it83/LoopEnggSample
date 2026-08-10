@@ -1,0 +1,43 @@
+name: PR Babysitter
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+jobs:
+  babysit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Gather pull request context
+        run: gh pr list --state open --limit 30 --json number,title,isDraft,reviewDecision,statusCheckRollup,updatedAt
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Invoke PR Babysitter loop
+        uses: cobusgreyling/loop-engineering/tools/loop-action@main
+        with:
+          pattern: pr-babysitter
+          level: L1
+          sandbox-shell: "true"
+          command: |
+            {
+              echo
+              echo "## $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              echo "- Open pull request context gathered."
+              echo "- Auto-merge is disabled; recommendations require human review."
+            } >> pr-babysitter-state.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pr-babysitter-state
+          path: pr-babysitter-state.md
+

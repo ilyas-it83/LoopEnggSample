@@ -1,0 +1,45 @@
+name: Issue Triage Loop
+
+on:
+  schedule:
+    - cron: "0 */2 * * 1-5"
+  issues:
+    types: [opened, reopened, labeled]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Gather issue context
+        run: gh issue list --state open --limit 20 --json number,title,labels,createdAt,updatedAt
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Invoke Issue Triage loop
+        uses: cobusgreyling/loop-engineering/tools/loop-action@main
+        with:
+          pattern: issue-triage
+          level: L1
+          sandbox-shell: "true"
+          command: |
+            {
+              echo
+              echo "## $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              echo "- Open issue context gathered for human triage."
+              echo "- Labels, priority changes, closure, and deduplication are propose-only."
+            } >> issue-triage-state.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: issue-triage-state
+          path: issue-triage-state.md
+

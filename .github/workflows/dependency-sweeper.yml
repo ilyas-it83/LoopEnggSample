@@ -1,0 +1,37 @@
+name: Dependency Sweeper
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Invoke Dependency Sweeper loop
+        uses: cobusgreyling/loop-engineering/tools/loop-action@main
+        with:
+          pattern: dependency-sweeper
+          level: L2
+          sandbox: "true"
+          sandbox-shell: "true"
+          command: |
+            npm outdated --json > dependency-outdated.json || true
+            npm audit --json > dependency-audit.json || true
+            echo "Dependency reports generated in an isolated worktree."
+            echo "Major upgrades and vulnerability changes require human approval."
+
