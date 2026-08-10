@@ -29,7 +29,13 @@ export function validateSearch(search: SearchCriteria): string[] {
   if (Number.isNaN(pickup) || Number.isNaN(dropoff)) errors.push("Enter valid pickup and return dates.");
   if (pickup < Date.parse(MOCK_CLOCK)) errors.push("Pickup cannot be earlier than the mock clock.");
   if (dropoff <= pickup) errors.push("Return must be later than pickup.");
-  if (search.driverAge < 18 || search.driverAge > 90) errors.push("Driver age must be between 18 and 90.");
+  if (
+    !Number.isFinite(search.driverAge) ||
+    search.driverAge < 18 ||
+    search.driverAge > 90
+  ) {
+    errors.push("Driver age must be between 18 and 90.");
+  }
   return errors;
 }
 

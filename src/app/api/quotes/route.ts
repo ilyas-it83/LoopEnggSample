@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findVehicle } from "@/lib/fixtures";
 import { buildQuote, validateSearch } from "@/lib/rental";
-import type { DemoScenario, SearchCriteria, SelectedExtra } from "@/lib/types";
+import type {
+  DemoScenario,
+  MockApiEnvelope,
+  Quote,
+  SearchCriteria,
+  SelectedExtra,
+} from "@/lib/types";
 
 interface QuoteRequest {
   search: SearchCriteria;
@@ -10,7 +16,9 @@ interface QuoteRequest {
   scenario?: DemoScenario;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+): Promise<NextResponse<MockApiEnvelope<Quote>>> {
   const body = await request.json() as QuoteRequest;
   const errors = validateSearch(body.search);
   const vehicle = findVehicle(body.vehicleId);
@@ -19,4 +27,3 @@ export async function POST(request: NextRequest) {
   }
   return NextResponse.json({ data: buildQuote(body.search, vehicle, body.extras, body.scenario), error: null });
 }
-
