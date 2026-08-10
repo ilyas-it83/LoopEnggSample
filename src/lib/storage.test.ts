@@ -39,7 +39,7 @@ describe("recently viewed vehicles", () => {
       const updated = updateBookingVehicle(booking, "midsize-1", "price-change");
       const base = updated.quote.lines.find((line) => line.id === "base")?.amount;
 
-      expect(base).toBe(Math.round(findVehicle("midsize-1")!.dailyRate * 1.1) * updated.quote.days);
+      expect(base).toBe((findVehicle("midsize-1")!.dailyRate + 800) * updated.quote.days);
     });
 
     it("rejects no-op, unavailable, ineligible, and cancelled changes", () => {
