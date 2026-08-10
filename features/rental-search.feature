@@ -16,3 +16,14 @@ Feature: Search for an available rental vehicle
     Then no vehicle cards are displayed
     And recovery guidance is displayed
 
+  Scenario: Customer filters results by estimated price range
+    Given available vehicles exist at "Harbor International Airport"
+    When the customer applies an estimated total maximum of "$200"
+    Then only vehicles with an estimated total at or below "$200" are displayed
+
+  @error
+  Scenario: Customer enters an invalid estimated price range
+    Given available vehicles exist at "Harbor International Airport"
+    When the customer applies a minimum estimated total greater than the maximum
+    Then the price filter is not applied
+    And accessible recovery guidance is displayed

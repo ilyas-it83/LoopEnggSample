@@ -4,9 +4,15 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SearchForm } from "@/components/SearchForm";
 import { VehicleCard } from "@/components/VehicleCard";
-import { buildQuote, defaultSearch, searchVehicles } from "@/lib/rental";
+import {
+  buildQuote,
+  defaultSearch,
+  filterVehiclesByEstimatedPrice,
+  searchVehicles,
+  validateEstimatedPriceRange,
+} from "@/lib/rental";
 import { getScenario } from "@/lib/storage";
-import type { DemoScenario, SearchCriteria, VehicleCategory } from "@/lib/types";
+import type { DemoScenario, EstimatedPriceRange, SearchCriteria, VehicleCategory } from "@/lib/types";
 
 function SearchResults() {
   const params = useSearchParams();
@@ -22,6 +28,10 @@ function SearchResults() {
   const [categories, setCategories] = useState<VehicleCategory[]>([]);
   const [fuel, setFuel] = useState<string[]>([]);
   const [sort, setSort] = useState("recommended");
+  const [minimumPrice, setMinimumPrice] = useState("");
+  const [maximumPrice, setMaximumPrice] = useState("");
+  const [priceRange, setPriceRange] = useState<EstimatedPriceRange>({});
+  const [priceRangeError, setPriceRangeError] = useState("");
 
   useEffect(() => {
     const update = () => setCurrentScenario(getScenario());
@@ -30,12 +40,13 @@ function SearchResults() {
     return () => window.removeEventListener("drivewise-storage", update);
   }, []);
 
-  const results = searchVehicles(search, scenario)
+  const baseResults = searchVehicles(search, scenario)
     .filter(
       (vehicle) =>
         (categories.length === 0 || categories.includes(vehicle.category)) &&
         (fuel.length === 0 || fuel.includes(vehicle.fuelType)),
-    )
+    );
+  const results = filterVehiclesByEstimatedPrice(baseResults, search, priceRange, scenario)
     .sort((a, b) => {
       if (sort === "price-asc") return a.dailyRate - b.dailyRate;
       if (sort === "price-desc") return b.dailyRate - a.dailyRate;
@@ -50,6 +61,29 @@ function SearchResults() {
 
   function toggleFuel(value: string) {
     setFuel((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
+  }
+
+  function applyPriceRange() {
+    const nextRange: EstimatedPriceRange = {
+      ...(minimumPrice ? { min: Number(minimumPrice) * 100 } : {}),
+      ...(maximumPrice ? { max: Number(maximumPrice) * 100 } : {}),
+    };
+    const [error] = validateEstimatedPriceRange(nextRange);
+    if (error) {
+      setPriceRangeError(error);
+      return;
+    }
+    setPriceRange(nextRange);
+    setPriceRangeError("");
+  }
+
+  function clearFilters() {
+    setCategories([]);
+    setFuel([]);
+    setMinimumPrice("");
+    setMaximumPrice("");
+    setPriceRange({});
+    setPriceRangeError("");
   }
 
   return (
@@ -77,7 +111,18 @@ function SearchResults() {
                 <label key={value}><input type="checkbox" checked={fuel.includes(value)} onChange={() => toggleFuel(value)} /> {value}</label>
               ))}
             </div>
-            <button className="link-button" type="button" onClick={() => { setCategories([]); setFuel([]); }}>Clear all filters</button>
+            <form className="filter-group" onSubmit={(event) => { event.preventDefault(); applyPriceRange(); }}>
+              <strong>Estimated total (USD)</strong>
+              <label htmlFor="minimum-price">Minimum
+                <input id="minimum-price" type="number" min="0" step="1" inputMode="numeric" value={minimumPrice} onChange={(event) => setMinimumPrice(event.target.value)} aria-describedby={priceRangeError ? "price-range-error" : undefined} />
+              </label>
+              <label htmlFor="maximum-price">Maximum
+                <input id="maximum-price" type="number" min="0" step="1" inputMode="numeric" value={maximumPrice} onChange={(event) => setMaximumPrice(event.target.value)} aria-describedby={priceRangeError ? "price-range-error" : undefined} />
+              </label>
+              {priceRangeError && <p id="price-range-error" className="filter-error" role="alert">{priceRangeError} Correct the range and apply it again.</p>}
+              <button className="button button-secondary button-small" type="submit">Apply price range</button>
+            </form>
+            <button className="link-button" type="button" onClick={clearFilters}>Clear all filters</button>
           </aside>
           <section aria-live="polite">
             <div className="result-toolbar">
@@ -96,7 +141,7 @@ function SearchResults() {
               <div className="empty-state">
                 <h2>No vehicles match this search</h2>
                 <p>Change the dates, location, driver age, or active filters. The no-results demo scenario may also be enabled.</p>
-                <button className="button button-secondary" type="button" onClick={() => { setCategories([]); setFuel([]); }}>Clear filters</button>
+                <button className="button button-secondary" type="button" onClick={clearFilters}>Clear filters</button>
               </div>
             ) : (
               <div className="vehicle-list">

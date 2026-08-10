@@ -3,9 +3,11 @@ import { findVehicle } from "./fixtures";
 import {
   buildQuote,
   defaultSearch,
+  filterVehiclesByEstimatedPrice,
   promotionMessage,
   rentalDays,
   searchVehicles,
+  validateEstimatedPriceRange,
   validateSearch,
 } from "./rental";
 
@@ -32,7 +34,30 @@ describe("rental search rules", () => {
     const results = searchVehicles({ ...defaultSearch, driverAge: 21 });
     expect(results.every((vehicle) => vehicle.minimumDriverAge <= 21)).toBe(true);
   });
+
+  it("filters vehicles by their estimated total inclusively", () => {
+    const available = searchVehicles(defaultSearch);
+    const results = filterVehiclesByEstimatedPrice(available, defaultSearch, { max: 20000 });
+
+    expect(results).not.toHaveLength(0);
+    expect(results).toHaveLength(2);
+    expect(results.every((vehicle) => buildQuote(defaultSearch, vehicle).total <= 20000)).toBe(true);
+  });
+
+  it("includes an estimated total at the price range boundary", () => {
+    const available = searchVehicles(defaultSearch);
+    const boundary = Math.min(...available.map((vehicle) => buildQuote(defaultSearch, vehicle).total));
+
+    expect(filterVehiclesByEstimatedPrice(available, defaultSearch, { min: boundary, max: boundary }))
+      .toHaveLength(1);
+  });
+
+  it("rejects invalid estimated price ranges", () => {
+    expect(validateEstimatedPriceRange({ min: -1 })).toContain("Minimum estimated price must be a non-negative whole amount.");
+    expect(validateEstimatedPriceRange({ min: 20000, max: 10000 })).toContain("Minimum estimated price cannot be greater than maximum estimated price.");
+  });
 });
+
 
 describe("rental pricing rules", () => {
   const vehicle = findVehicle("compact-1")!;
@@ -87,4 +112,3 @@ describe("rental pricing rules", () => {
     expect(buildQuote(defaultSearch, vehicle, [], "price-change")).toEqual(changed);
   });
 });
-

@@ -1,6 +1,7 @@
 import { extras, findExtra, MOCK_CLOCK, vehicles } from "./fixtures";
 import type {
   DemoScenario,
+  EstimatedPriceRange,
   Quote,
   QuoteLine,
   SearchCriteria,
@@ -44,6 +45,29 @@ export function searchVehicles(
       vehicle.locationIds.includes(search.pickupLocationId) &&
       search.driverAge >= vehicle.minimumDriverAge,
   );
+}
+
+export function validateEstimatedPriceRange(range: EstimatedPriceRange): string[] {
+  const errors: string[] = [];
+  if (range.min !== undefined && (!Number.isSafeInteger(range.min) || range.min < 0)) errors.push("Minimum estimated price must be a non-negative whole amount.");
+  if (range.max !== undefined && (!Number.isSafeInteger(range.max) || range.max < 0)) errors.push("Maximum estimated price must be a non-negative whole amount.");
+  if (errors.length === 0 && range.min !== undefined && range.max !== undefined && range.min > range.max) {
+    errors.push("Minimum estimated price cannot be greater than maximum estimated price.");
+  }
+  return errors;
+}
+
+export function filterVehiclesByEstimatedPrice(
+  availableVehicles: Vehicle[],
+  search: SearchCriteria,
+  range: EstimatedPriceRange,
+  scenario: DemoScenario = "normal",
+): Vehicle[] {
+  if (validateEstimatedPriceRange(range).length > 0) return availableVehicles;
+  return availableVehicles.filter((vehicle) => {
+    const total = buildQuote(search, vehicle, [], scenario).total;
+    return (range.min === undefined || total >= range.min) && (range.max === undefined || total <= range.max);
+  });
 }
 
 export function buildQuote(
@@ -122,4 +146,3 @@ export function formatDateTime(value: string): string {
     minute: "2-digit",
   }).format(new Date(value));
 }
-
