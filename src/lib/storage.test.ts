@@ -62,9 +62,9 @@ describe("booking date-time modification", () => {
         "2026-08-25T09:00",
       ).booking;
       const repeated = updateBookingDateTimes(
-        updated,
-        updated.search.pickupAt,
-        updated.search.returnAt,
+        booking,
+        "2026-08-20T09:00:00",
+        "2026-08-25T09:00:00",
         "service-error",
       );
       expect(repeated.changed).toBe(false);

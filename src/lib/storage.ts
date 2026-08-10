@@ -214,8 +214,14 @@ export function reviewBookingDateTimes(
   ) {
     return { errors: ["Only upcoming confirmed bookings can be modified."], changed: false };
   }
-  const changed = pickupAt !== booking.search.pickupAt || returnAt !== booking.search.returnAt;
-  if (!changed) {
+  const pickupInstant = Date.parse(pickupAt);
+  const returnInstant = Date.parse(returnAt);
+  const unchanged =
+    Number.isFinite(pickupInstant) &&
+    Number.isFinite(returnInstant) &&
+    pickupInstant === Date.parse(booking.search.pickupAt) &&
+    returnInstant === Date.parse(booking.search.returnAt);
+  if (unchanged) {
     return { errors: [], changed: false };
   }
   if (scenario === "service-error") {
@@ -255,20 +261,21 @@ export function updateBookingDateTimes(
   returnAt: string,
   scenario: DemoScenario = getScenario(),
 ): { booking: Booking; errors: string[]; changed: boolean } {
-  const review = reviewBookingDateTimes(booking, pickupAt, returnAt, scenario);
+  const latestBooking = findBooking(booking.id) ?? booking;
+  const review = reviewBookingDateTimes(latestBooking, pickupAt, returnAt, scenario);
   if (review.errors.length > 0 || !review.changed) {
-    return { booking, errors: review.errors, changed: false };
+    return { booking: latestBooking, errors: review.errors, changed: false };
   }
 
   const updated: Booking = {
-    ...booking,
+    ...latestBooking,
     search: review.search!,
     quote: review.quote!,
     updatedAt: MOCK_CLOCK,
     history: [
-      ...booking.history,
+      ...latestBooking.history,
       {
-        id: `history-date-times-${booking.history.length + 1}`,
+        id: `history-date-times-${latestBooking.history.length + 1}`,
         action: "Modified",
         at: MOCK_CLOCK,
         detail: "Rental date-times were updated.",
