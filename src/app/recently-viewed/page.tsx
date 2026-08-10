@@ -19,13 +19,16 @@ export default function RecentlyViewedPage() {
     return () => window.removeEventListener("drivewise-storage", update);
   }, []);
 
-  const vehicles = vehicleIds?.map((id) => vehiclesById.get(id)!);
+  const vehicles = (vehicleIds ?? []).flatMap((id) => {
+    const vehicle = vehiclesById.get(id);
+    return vehicle ? [vehicle] : [];
+  });
 
   return (
     <>
       <section className="page-hero"><p className="eyebrow">Saved locally</p><h1>Recently viewed</h1><p>Vehicle details you view are saved in this browser profile until the demo is reset.</p></section>
       <div className="content-wrap">
-        {vehicles === undefined ? <p role="status">Loading recently viewed vehicles…</p> :
+        {vehicleIds === null ? <p role="status">Loading recently viewed vehicles…</p> :
           vehicles.length === 0 ? <div className="empty-state"><h2>No recently viewed vehicles</h2><p>View a vehicle’s details to add it here.</p><Link className="button button-primary" href="/search">Browse vehicles</Link></div> :
             <div className="vehicle-list">{vehicles.map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} search={defaultSearch} total={buildQuote(defaultSearch, vehicle).total} />)}</div>}
       </div>
