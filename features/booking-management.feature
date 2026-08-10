@@ -14,6 +14,12 @@ Feature: Manage a booking
     And a zero mock cancellation fee is applied
     And the booking cannot be cancelled again
 
+  Scenario: Customer modifies eligible rental date-times
+    Given an upcoming confirmed booking
+    When the customer confirms valid new rental date-times
+    Then the booking itinerary and price are recalculated
+    And the date-time change is recorded once in the booking history
+
   Scenario: Customer modifies the vehicle subject to availability
     Given a confirmed booking is eligible for modification
     And an alternative vehicle is available for the booking's dates and location
@@ -30,4 +36,3 @@ Feature: Manage a booking
     Then the vehicle change is prevented
     And an actionable recovery message is displayed
     And the booking's original vehicle remains unchanged
-
