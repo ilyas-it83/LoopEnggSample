@@ -1,6 +1,7 @@
 "use client";
 
 import { buildQuote, defaultSearch } from "./rental";
+import { MAX_COMPARISON_VEHICLES } from "./comparison";
 import { findVehicle } from "./fixtures";
 import type {
   Booking,
@@ -197,7 +198,7 @@ export function toggleComparison(vehicleId: string): string[] {
     write(KEYS.comparison, next);
     return next;
   }
-  if (selected.length >= 3) return selected;
+  if (selected.length >= MAX_COMPARISON_VEHICLES) return selected;
   const next = [...selected, vehicleId];
   write(KEYS.comparison, next);
   return next;

@@ -17,9 +17,10 @@ function VehicleDetails() {
   useEffect(() => setScenario(getScenario()), []);
 
   const vehicle = findVehicle(params.vehicleId);
+  const vehicleId = vehicle?.id;
   useEffect(() => {
-    if (vehicle) recordRecentlyViewed(vehicle.id);
-  }, [vehicle]);
+    if (vehicleId) recordRecentlyViewed(vehicleId);
+  }, [vehicleId]);
   const search: SearchCriteria = {
     pickupLocationId: query.get("pickupLocationId") || defaultSearch.pickupLocationId,
     returnLocationId: query.get("returnLocationId") || defaultSearch.returnLocationId,

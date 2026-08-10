@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { SearchForm } from "@/components/SearchForm";
 import { VehicleCard } from "@/components/VehicleCard";
+import { MAX_COMPARISON_VEHICLES } from "@/lib/comparison";
 import { buildQuote, defaultSearch, searchVehicles } from "@/lib/rental";
 import { getComparison, getScenario } from "@/lib/storage";
 import type { DemoScenario, SearchCriteria, VehicleCategory } from "@/lib/types";
@@ -109,7 +110,7 @@ function SearchResults() {
             </div>
             {comparisonIds.length > 0 && (
               <div className="alert alert-info" aria-live="polite" style={{ marginBottom: 18 }}>
-                {comparisonIds.length} of 3 vehicles selected for comparison.{" "}
+                {comparisonIds.length} of {MAX_COMPARISON_VEHICLES} vehicles selected for comparison.{" "}
                 {comparisonIds.length >= 2
                   ? <Link href={`/compare?${comparisonQuery.toString()}`}>Compare selected vehicles</Link>
                   : "Select one more vehicle to build the comparison matrix."}

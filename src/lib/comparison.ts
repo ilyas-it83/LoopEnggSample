@@ -1,6 +1,8 @@
 import { buildQuote, formatMoney } from "./rental";
 import type { SearchCriteria, Vehicle } from "./types";
 
+export const MAX_COMPARISON_VEHICLES = 3;
+
 export interface ComparisonRow {
   label: string;
   values: string[];
@@ -12,7 +14,7 @@ export interface VehicleComparison {
 }
 
 export function buildComparison(search: SearchCriteria, selectedVehicles: Vehicle[]): VehicleComparison {
-  if (selectedVehicles.length < 2 || selectedVehicles.length > 3) {
+  if (selectedVehicles.length < 2 || selectedVehicles.length > MAX_COMPARISON_VEHICLES) {
     throw new Error("Select between two and three vehicles to compare.");
   }
 

@@ -37,8 +37,8 @@ function ComparisonPageContent() {
         </section>
         <div className="content-wrap">
           <div className="table-wrap" tabIndex={0}>
-            <table aria-label="Vehicle comparison matrix">
-              <caption className="sr-only">Comparison of selected vehicles</caption>
+            <table>
+              <caption className="sr-only">Vehicle comparison matrix</caption>
               <thead>
                 <tr>
                   <th scope="col">Characteristic</th>
