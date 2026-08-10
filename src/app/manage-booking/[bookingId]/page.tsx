@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PriceBreakdown } from "@/components/PriceBreakdown";
-import { extras, findLocation, findVehicle, vehicles } from "@/lib/fixtures";
+import { extras, findLocation, findVehicle, MOCK_CLOCK, vehicles } from "@/lib/fixtures";
 import {
   buildQuote,
   extraQuantityLimit,
@@ -17,6 +17,8 @@ import {
   cancelBooking,
   findBooking,
   getScenario,
+  reviewBookingDateTimes,
+  updateBookingDateTimes,
   updateBookingExtras,
   updateBookingVehicle,
 } from "@/lib/storage";
@@ -26,7 +28,11 @@ export default function ManageBookingPage() {
   const params = useParams<{ bookingId: string }>();
   const [booking, setBooking] = useState<Booking | null | undefined>(undefined);
   const [editingExtras, setEditingExtras] = useState(false);
+  const [editingDateTimes, setEditingDateTimes] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
+  const [pickupAt, setPickupAt] = useState("");
+  const [returnAt, setReturnAt] = useState("");
+  const [dateTimeErrors, setDateTimeErrors] = useState<string[]>([]);
   const [editingVehicle, setEditingVehicle] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [vehicleError, setVehicleError] = useState("");
@@ -38,6 +44,8 @@ export default function ManageBookingPage() {
     const found = findBooking(params.bookingId);
     setBooking(found || null);
     setSelectedExtras(found?.extras || []);
+    setPickupAt(found?.search.pickupAt || "");
+    setReturnAt(found?.search.returnAt || "");
     setSelectedVehicleId(found?.vehicleId || "");
   }, [params.bookingId]);
 
@@ -48,10 +56,19 @@ export default function ManageBookingPage() {
     return () => window.removeEventListener("drivewise-storage", update);
   }, []);
 
+  const dateTimeReview = useMemo(
+    () => booking && editingDateTimes
+      ? reviewBookingDateTimes(booking, pickupAt, returnAt, scenario)
+      : undefined,
+    [booking, editingDateTimes, pickupAt, returnAt, scenario],
+  );
+
   if (booking === undefined) return <div className="content-wrap">Loading booking…</div>;
   if (!booking) return <div className="content-wrap"><div className="empty-state"><h1>Booking not found</h1><Link className="button button-primary" href="/manage-booking">Try another reference</Link></div></div>;
   const vehicle = findVehicle(booking.vehicleId)!;
   const canChange = booking.status === "Confirmed";
+  const canModifyDateTimes =
+    canChange && Date.parse(booking.search.pickupAt) > Date.parse(MOCK_CLOCK);
   const candidateVehicles = [
     vehicle,
     ...vehicles.filter((item) => item.id !== vehicle.id),
@@ -101,6 +118,29 @@ export default function ManageBookingPage() {
     setEditingVehicle(true);
   }
 
+  function startDateTimeEdit() {
+    setPickupAt(booking!.search.pickupAt);
+    setReturnAt(booking!.search.returnAt);
+    setDateTimeErrors([]);
+    setEditingDateTimes(true);
+  }
+
+  function saveDateTimes() {
+    const updated = updateBookingDateTimes(booking!, pickupAt, returnAt, scenario);
+    if (updated.errors.length > 0) {
+      setDateTimeErrors(updated.errors);
+      return;
+    }
+    if (!updated.changed) {
+      setDateTimeErrors(["Choose a different pickup or return date-time before confirming."]);
+      return;
+    }
+    setBooking(updated.booking);
+    setEditingDateTimes(false);
+    setDateTimeErrors([]);
+    setMessage("Rental date-times updated. The mock total was recalculated.");
+  }
+
   function saveVehicle() {
     setVehicleError("");
     try {
@@ -141,6 +181,48 @@ export default function ManageBookingPage() {
                 <dt>Driver</dt><dd>{booking.driver.firstName} {booking.driver.lastName}</dd>
                 <dt>Payment</dt><dd>{booking.payment.brand} ending {booking.payment.last4}</dd>
               </dl>
+              {!editingDateTimes ? (
+                <button className="button button-secondary" type="button" disabled={!canModifyDateTimes} onClick={startDateTimeEdit}>Modify rental date-times</button>
+              ) : (
+                <div className="form-grid" style={{ marginTop: 20 }}>
+                  <div className="field">
+                    <label htmlFor="pickup-at">Pickup date and time</label>
+                    <input
+                      id="pickup-at"
+                      type="datetime-local"
+                      value={pickupAt}
+                      onChange={(event) => {
+                        setPickupAt(event.target.value);
+                        setDateTimeErrors([]);
+                      }}
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="return-at">Return date and time</label>
+                    <input
+                      id="return-at"
+                      type="datetime-local"
+                      value={returnAt}
+                      onChange={(event) => {
+                        setReturnAt(event.target.value);
+                        setDateTimeErrors([]);
+                      }}
+                    />
+                  </div>
+                  {dateTimeErrors.length > 0 && (
+                    <div className="alert alert-error" role="alert">{dateTimeErrors.join(" ")}</div>
+                  )}
+                  {dateTimeReview?.changed && !dateTimeReview.errors.length && dateTimeReview.quote && (
+                    <div className="alert alert-info" role="status">
+                      Original total: {formatMoney(booking.quote.total)}. Revised total: {formatMoney(dateTimeReview.quote.total)}. Difference: {formatMoney(dateTimeReview.quote.total - booking.quote.total)}.
+                    </div>
+                  )}
+                  <div className="form-actions">
+                    <button className="button button-secondary" type="button" onClick={() => setEditingDateTimes(false)}>Discard</button>
+                    <button className="button button-primary" type="button" onClick={saveDateTimes}>Confirm date-time changes</button>
+                  </div>
+                </div>
+              )}
               <h2>Vehicle</h2>
               {scenario === "vehicle-unavailable" && (
                 <div className="alert alert-error" role="alert" style={{ marginBottom: 14 }}>Vehicle changes are unavailable under the active demo scenario.</div>
