@@ -1,6 +1,7 @@
 import type { Extra, RentalLocation, Vehicle, VehicleCategory } from "./types";
 
 export const MOCK_CLOCK = "2026-08-10T10:00";
+export const DRIVEWISE_FIXTURE_VERSION = "drivewise-fixtures-v1";
 
 export const locations: RentalLocation[] = [
   { id: "harbor-airport", name: "Harbor International Airport", city: "Harbor City", type: "Airport", address: "1 Terminal Way", timezone: "America/New_York" },

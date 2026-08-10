@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArchitectureInitializer } from "@/components/ArchitectureInitializer";
 import { SearchForm } from "@/components/SearchForm";
 import { locations } from "@/lib/fixtures";
 
@@ -44,6 +45,8 @@ export default function Home() {
         <div><span className="benefit-icon">↻</span><h3>Flexible demo bookings</h3><p>Retrieve, update extras, or cancel an eligible fixture reservation.</p></div>
         <div><span className="benefit-icon">✓</span><h3>Built for confidence</h3><p>Deterministic data, accessible interactions, and tested business rules.</p></div>
       </section>
+
+      <ArchitectureInitializer />
     </>
   );
 }
