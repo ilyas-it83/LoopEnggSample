@@ -7,6 +7,7 @@ Next.js demo.
 | Workflow | Trigger | Mode |
 | --- | --- | --- |
 | Assign Issue to Copilot | `copilot-ready` label, manual | Starts one approved coding-agent task |
+| Copilot Review Gate | Pull request changes, manual | Requires a native Copilot review of the current head commit |
 | CI | Push, pull request, manual | Type, lint, unit, build, and browser tests |
 | Changelog Drafter | Daily, manual | Produces a release-notes artifact |
 | CI Sweeper | Failed CI, manual | L2 report on an ephemeral runner |
@@ -26,3 +27,9 @@ Copilot assignment requires the `COPILOT_ASSIGNMENT_TOKEN` repository secret.
 Only open issues carrying both `user-story` and the human-applied
 `copilot-ready` label are eligible. The workflow adds `copilot-assigned` after
 successful assignment and is idempotent when Copilot is already assigned.
+
+The same token requests native Copilot code review. The review gate removes a
+stale `copilot-reviewed` label after each push, waits for a review tied to the
+new head commit, and restores the label only after verification. Configure the
+Copilot code-review model or tier in the repository or organization settings;
+GitHub does not expose model selection in workflow YAML.

@@ -27,3 +27,16 @@ Feature: Search for an available rental vehicle
     When the customer applies a minimum estimated total greater than the maximum
     Then the price filter is not applied
     And accessible recovery guidance is displayed
+
+  Scenario: Customer filters results by passenger capacity
+    Given available vehicles exist at "Harbor International Airport"
+    When the customer filters for at least 7 passengers
+    Then only vehicles with at least 7 seats are displayed
+
+  @error
+  Scenario: Vehicle service error prevents unavailable results
+    Given the "Service error" demo scenario is active
+    When the customer searches with valid criteria
+    Then no vehicle cards are displayed
+    And recovery guidance is displayed
+

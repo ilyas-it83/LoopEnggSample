@@ -4,6 +4,7 @@ import {
   buildQuote,
   defaultSearch,
   filterVehiclesByEstimatedPrice,
+  filterVehiclesByPassengerCapacity,
   promotionMessage,
   rentalDays,
   searchVehicles,
@@ -59,6 +60,42 @@ describe("rental search rules", () => {
     ]);
     expect(validateEstimatedPriceRange({ min: 20000, max: 10000 })).toContain("Minimum estimated price cannot be greater than maximum estimated price.");
     expect(filterVehiclesByEstimatedPrice(searchVehicles(defaultSearch), defaultSearch, { min: 20000, max: 10000 })).toEqual([]);
+  });
+
+  it("filters available vehicles to the requested passenger capacity", () => {
+    expect(filterVehiclesByPassengerCapacity(searchVehicles(defaultSearch), 7).map((vehicle) => vehicle.id))
+      .toEqual(["van-2", "van-3"]);
+  });
+
+  it("filters available vehicles for the 5+ passenger option", () => {
+    expect(filterVehiclesByPassengerCapacity(searchVehicles(defaultSearch), 5).map((vehicle) => vehicle.id))
+      .toEqual([
+        "economy-2",
+        "economy-3",
+        "compact-1",
+        "compact-2",
+        "compact-4",
+        "midsize-1",
+        "midsize-3",
+        "midsize-4",
+        "full-size-2",
+        "full-size-3",
+        "suv-1",
+        "suv-2",
+        "suv-4",
+        "luxury-1",
+        "luxury-3",
+        "luxury-4",
+        "van-2",
+        "van-3",
+        "electric-1",
+        "electric-2",
+      ]);
+  });
+
+  it("preserves available vehicles when no passenger capacity is selected", () => {
+    const results = searchVehicles(defaultSearch);
+    expect(filterVehiclesByPassengerCapacity(results)).toEqual(results);
   });
 });
 

@@ -38,7 +38,7 @@ export function searchVehicles(
   search: SearchCriteria,
   scenario: DemoScenario = "normal",
 ): Vehicle[] {
-  if (scenario === "no-results" || validateSearch(search).length > 0) return [];
+  if (scenario === "no-results" || scenario === "service-error" || validateSearch(search).length > 0) return [];
   return vehicles.filter(
     (vehicle) =>
       vehicle.inventory > 0 &&
@@ -68,6 +68,14 @@ export function filterVehiclesByEstimatedPrice(
     const total = buildQuote(search, vehicle, [], scenario).total;
     return (range.min === undefined || total >= range.min) && (range.max === undefined || total <= range.max);
   });
+}
+
+export function filterVehiclesByPassengerCapacity(
+  availableVehicles: Vehicle[],
+  minimumPassengers?: number,
+): Vehicle[] {
+  if (minimumPassengers === undefined) return availableVehicles;
+  return availableVehicles.filter((vehicle) => vehicle.passengers >= minimumPassengers);
 }
 
 export function buildQuote(

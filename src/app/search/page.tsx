@@ -8,6 +8,7 @@ import {
   buildQuote,
   defaultSearch,
   filterVehiclesByEstimatedPrice,
+  filterVehiclesByPassengerCapacity,
   searchVehicles,
   validateEstimatedPriceRange,
 } from "@/lib/rental";
@@ -27,6 +28,7 @@ function SearchResults() {
   const [scenario, setCurrentScenario] = useState<DemoScenario>("normal");
   const [categories, setCategories] = useState<VehicleCategory[]>([]);
   const [fuel, setFuel] = useState<string[]>([]);
+  const [minimumPassengers, setMinimumPassengers] = useState<number>();
   const [sort, setSort] = useState("recommended");
   const [minimumPrice, setMinimumPrice] = useState("");
   const [maximumPrice, setMaximumPrice] = useState("");
@@ -40,7 +42,8 @@ function SearchResults() {
     return () => window.removeEventListener("drivewise-storage", update);
   }, []);
 
-  const baseResults = searchVehicles(search, scenario)
+  const availableVehicles = searchVehicles(search, scenario);
+  const baseResults = filterVehiclesByPassengerCapacity(availableVehicles, minimumPassengers)
     .filter(
       (vehicle) =>
         (categories.length === 0 || categories.includes(vehicle.category)) &&
@@ -84,6 +87,7 @@ function SearchResults() {
   function clearFilters() {
     setCategories([]);
     setFuel([]);
+    setMinimumPassengers(undefined);
     setMinimumPrice("");
     setMaximumPrice("");
     setPriceRange({});
@@ -115,6 +119,14 @@ function SearchResults() {
                 <label key={value}><input type="checkbox" checked={fuel.includes(value)} onChange={() => toggleFuel(value)} /> {value}</label>
               ))}
             </div>
+            <div className="filter-group">
+              <label htmlFor="minimum-passengers"><strong>Minimum passenger capacity</strong></label>
+              <select id="minimum-passengers" value={minimumPassengers ?? ""} onChange={(event) => setMinimumPassengers(event.target.value ? Number(event.target.value) : undefined)}>
+                <option value="">Any capacity</option>
+                <option value="5">5+ passengers</option>
+                <option value="7">7+ passengers</option>
+              </select>
+            </div>
             <form className="filter-group" onSubmit={(event) => { event.preventDefault(); applyPriceRange(); }}>
               <strong>Estimated total (USD)</strong>
               <label htmlFor="minimum-price">Minimum
@@ -129,19 +141,26 @@ function SearchResults() {
             <button className="link-button" type="button" onClick={clearFilters}>Clear all filters</button>
           </aside>
           <section aria-live="polite">
-            <div className="result-toolbar">
-              <strong>{results.length} matching vehicles</strong>
-              <label>Sort by{" "}
-                <select value={sort} onChange={(event) => setSort(event.target.value)}>
-                  <option value="recommended">Recommended</option>
-                  <option value="price-asc">Price: low to high</option>
-                  <option value="price-desc">Price: high to low</option>
-                  <option value="capacity">Passenger capacity</option>
-                  <option value="name">Vehicle name</option>
-                </select>
-              </label>
-            </div>
-            {results.length === 0 ? (
+            {scenario !== "service-error" && (
+              <div className="result-toolbar">
+                <strong>{results.length} matching vehicles</strong>
+                <label>Sort by{" "}
+                  <select value={sort} onChange={(event) => setSort(event.target.value)}>
+                    <option value="recommended">Recommended</option>
+                    <option value="price-asc">Price: low to high</option>
+                    <option value="price-desc">Price: high to low</option>
+                    <option value="capacity">Passenger capacity</option>
+                    <option value="name">Vehicle name</option>
+                  </select>
+                </label>
+              </div>
+            )}
+            {scenario === "service-error" ? (
+              <div className="empty-state">
+                <h2>Vehicle results are unavailable</h2>
+                <p>The mock vehicle service is unavailable. Choose the Normal scenario in Demo controls and retry your search.</p>
+              </div>
+            ) : results.length === 0 ? (
               <div className="empty-state">
                 <h2>No vehicles match this search</h2>
                 <p>Change the dates, location, driver age, or active filters. The no-results demo scenario may also be enabled.</p>

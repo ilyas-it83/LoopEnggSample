@@ -77,3 +77,21 @@ test("customer receives recovery guidance for an invalid estimated price range",
   await expect(page.getByRole("alert")).toContainText("Minimum estimated price cannot be greater than maximum estimated price.");
   await expect(count).toHaveText(baseline!);
 });
+
+test("customer filters results by passenger capacity", async ({ page }) => {
+  await page.goto("/search");
+  await page.getByLabel("Minimum passenger capacity").selectOption("5");
+  await expect(page.getByText("20 matching vehicles")).toBeVisible();
+  await page.getByLabel("Minimum passenger capacity").selectOption("7");
+  await expect(page.getByText("2 matching vehicles")).toBeVisible();
+  await expect(page.getByRole("article")).toContainText(["7 seats", "7 seats"]);
+});
+
+test("service errors prevent unavailable vehicle results", async ({ page }) => {
+  await page.goto("/demo-controls");
+  await page.getByRole("button", { name: /Service error/ }).click();
+  await page.goto("/search");
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Vehicle results are unavailable" })).toBeVisible();
+  await expect(page.getByRole("article")).toHaveCount(0);
+});
