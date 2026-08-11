@@ -2,6 +2,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DRIVEWISE_FIXTURE_VERSION, MOCK_CLOCK, locations, vehicles } from "@/lib/fixtures";
+import { demoApplicationConfig } from "@/lib/demo-config";
 import { resetDemo, setScenario } from "@/lib/storage";
 import { ArchitectureInitializer } from "./ArchitectureInitializer";
 
@@ -20,6 +21,10 @@ describe("ArchitectureInitializer", () => {
     expect(screen.getByText(DRIVEWISE_FIXTURE_VERSION)).toBeInTheDocument();
     expect(screen.getByText(MOCK_CLOCK)).toBeInTheDocument();
     expect(screen.getByText(`${vehicles.length} vehicles across ${locations.length} locations`)).toBeInTheDocument();
+    expect(screen.getByText("versioned-fixtures")).toBeInTheDocument();
+    expect(screen.getByText("browser-local")).toBeInTheDocument();
+    expect(screen.getByText("in-process-mocks")).toBeInTheDocument();
+    expect(screen.getByText("Enabled")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Initialize architecture" }));
 
@@ -41,5 +46,18 @@ describe("ArchitectureInitializer", () => {
     resetDemo();
 
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+  });
+
+  it("prevents initialization and gives recovery guidance when configuration is invalid", async () => {
+    render(
+      <ArchitectureInitializer
+        config={{ ...demoApplicationConfig, fixtureVersion: "" }}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Initialize architecture" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("A fixture version is required");
+    expect(screen.getByRole("alert")).toHaveTextContent("Correct the demo configuration and retry");
   });
 });
