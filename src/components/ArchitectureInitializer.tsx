@@ -2,25 +2,48 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { DRIVEWISE_FIXTURE_VERSION, MOCK_CLOCK, locations, vehicles } from "@/lib/fixtures";
+import { locations, vehicles } from "@/lib/fixtures";
+import {
+  demoApplicationConfig,
+  type DemoApplicationConfig,
+  validateDemoApplicationConfig,
+} from "@/lib/demo-config";
 import { getScenario } from "@/lib/storage";
 
 type InitializationState = "idle" | "ready" | "blocked";
 
-export function ArchitectureInitializer() {
+interface ArchitectureInitializerProps {
+  config?: DemoApplicationConfig;
+}
+
+export function ArchitectureInitializer({
+  config = demoApplicationConfig,
+}: ArchitectureInitializerProps) {
   const [state, setState] = useState<InitializationState>("idle");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const resetState = () => setState("idle");
+    const resetState = () => {
+      setState("idle");
+      setError("");
+    };
     window.addEventListener("drivewise-storage", resetState);
     return () => window.removeEventListener("drivewise-storage", resetState);
   }, []);
 
   function initialize() {
     if (getScenario() === "service-error") {
+      setError("Architecture initialization is unavailable while the Service error scenario is active. Switch to Normal in Demo controls and retry.");
       setState("blocked");
       return;
     }
+    const errors = validateDemoApplicationConfig(config);
+    if (errors.length > 0) {
+      setError(`${errors[0]} Correct the demo configuration and retry.`);
+      setState("blocked");
+      return;
+    }
+    setError("");
     setState("ready");
   }
 
@@ -34,9 +57,13 @@ export function ArchitectureInitializer() {
         </p>
       </div>
       <dl className="architecture-facts" aria-label="Drivewise fixture manifest">
-        <div><dt>Fixture version</dt><dd>{DRIVEWISE_FIXTURE_VERSION}</dd></div>
-        <div><dt>Mock clock</dt><dd>{MOCK_CLOCK}</dd></div>
+        <div><dt>Fixture version</dt><dd>{config.fixtureVersion}</dd></div>
+        <div><dt>Mock clock</dt><dd>{config.mockClock}</dd></div>
         <div><dt>Mock inventory</dt><dd>{vehicles.length} vehicles across {locations.length} locations</dd></div>
+        <div><dt>Data source</dt><dd>{config.dataSource}</dd></div>
+        <div><dt>State store</dt><dd>{config.stateStore}</dd></div>
+        <div><dt>Service mode</dt><dd>{config.serviceMode}</dd></div>
+        <div><dt>Demo controls</dt><dd>{config.demoControlsEnabled ? "Enabled" : "Disabled"}</dd></div>
       </dl>
       <div className="architecture-actions">
         <button className="button button-primary" type="button" onClick={initialize}>
@@ -46,12 +73,12 @@ export function ArchitectureInitializer() {
       </div>
       {state === "ready" && (
         <div className="alert alert-success" role="status">
-          Next.js App Router architecture initialized with {DRIVEWISE_FIXTURE_VERSION}; no production service or real data is required.
+          Next.js App Router architecture initialized with {config.fixtureVersion}; no production service or real data is required.
         </div>
       )}
       {state === "blocked" && (
         <div className="alert alert-error" role="alert">
-          Architecture initialization is unavailable while the Service error scenario is active. Switch to Normal in Demo controls and retry.
+          {error}
         </div>
       )}
     </section>
