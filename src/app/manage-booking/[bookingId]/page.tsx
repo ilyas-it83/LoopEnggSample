@@ -105,11 +105,15 @@ export default function ManageBookingPage() {
       setError(errors[0]);
       return;
     }
-    const updated = updateBookingExtras(booking!, selectedExtras, scenario);
-    setBooking(updated);
-    setEditingExtras(false);
-    setError("");
-    setMessage("Optional extras updated. The mock total was recalculated.");
+    try {
+      const updated = updateBookingExtras(booking!, selectedExtras, scenario);
+      setBooking(updated);
+      setEditingExtras(false);
+      setError("");
+      setMessage("Optional extras updated. The mock total was recalculated.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "This booking could not be updated.");
+    }
   }
 
   function openVehicleChange() {
@@ -155,9 +159,13 @@ export default function ManageBookingPage() {
 
   function cancel() {
     if (!window.confirm("Cancel this fictional booking? This action changes local demo state.")) return;
-    const updated = cancelBooking(booking!);
-    setBooking(updated);
-    setMessage("Booking cancelled. Mock refund estimate: " + formatMoney(updated.quote.total));
+    try {
+      const updated = cancelBooking(booking!);
+      setBooking(updated);
+      setMessage("Booking cancelled. Mock refund estimate: " + formatMoney(updated.quote.total));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "This booking cannot be cancelled in its current state.");
+    }
   }
 
   return (

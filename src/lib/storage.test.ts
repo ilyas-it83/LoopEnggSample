@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  cancelBooking,
   findBooking,
   getBookings,
   getComparison,
@@ -134,6 +135,35 @@ describe("booking date-time modification", () => {
         "We could not update this booking right now. Try again after resetting the demo scenario.",
       );
     });
+});
+
+describe("booking lifecycle transitions", () => {
+  beforeEach(() => resetDemo());
+
+  it("cancels an eligible confirmed booking once and keeps the history stable on repeats", () => {
+    const booking = findBooking("DW-260820-A1B2")!;
+
+    const cancelled = cancelBooking(booking);
+    const repeated = cancelBooking(cancelled);
+
+    expect(cancelled.status).toBe("Cancelled");
+    expect(cancelled.history.at(-1)?.action).toBe("Cancelled");
+    expect(repeated).toEqual(cancelled);
+    expect(findBooking(booking.id)?.status).toBe("Cancelled");
+  });
+
+  it("prevents invalid lifecycle transitions for non-confirmed bookings and preserves the existing booking", () => {
+    const booking = findBooking("DW-260820-A1B2")!;
+    const original = structuredClone(booking);
+    const completedBooking = { ...booking, status: "Completed" as const };
+
+    expect(() => updateBookingExtras(completedBooking, [{ id: "protection-basic", quantity: 1 }]))
+      .toThrow("Only confirmed bookings can have their extras updated.");
+    expect(() => cancelBooking(completedBooking))
+      .toThrow("Only confirmed bookings can be cancelled.");
+    expect(findBooking(booking.id)).toEqual(original);
+    expect(getBookings()).toEqual([booking]);
+  });
 });
 
 describe("local comparison state", () => {

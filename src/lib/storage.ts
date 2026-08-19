@@ -140,6 +140,10 @@ export function updateBookingExtras(
   selectedExtras: SelectedExtra[],
   scenario: DemoScenario = "normal",
 ): Booking {
+  if (booking.status !== "Confirmed") {
+    throw new Error("Only confirmed bookings can have their extras updated.");
+  }
+
   const extraErrors = validateSelectedExtras(selectedExtras);
   if (extraErrors.length > 0) throw new Error(extraErrors[0]);
 
@@ -288,6 +292,9 @@ export function updateBookingDateTimes(
 
 export function cancelBooking(booking: Booking): Booking {
   if (booking.status === "Cancelled") return booking;
+  if (booking.status !== "Confirmed") {
+    throw new Error("Only confirmed bookings can be cancelled.");
+  }
   const now = new Date().toISOString();
   const cancelled: Booking = {
     ...booking,
